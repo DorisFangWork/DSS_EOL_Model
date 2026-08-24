@@ -1,0 +1,6 @@
+pulp>=3.3,<4
+numpy>=2.4,<3
+pandas>=3.0,<4
+matplotlib>=3.11,<4
+pytest>=9.1,<10
+

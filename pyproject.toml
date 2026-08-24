@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phd-dss-prototype"
+version = "0.1.0"
+description = "Research decision-support core for asset-informed retired-EV-battery allocation"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "pulp>=3.3,<4",
+  "numpy>=2.4,<3",
+  "pandas>=3.0,<4",
+  "matplotlib>=3.11,<4",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=9.1,<10"]
+
+[tool.setuptools]
+packages = ["dss", "level0"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+

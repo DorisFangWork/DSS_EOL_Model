@@ -1,0 +1,15 @@
+.venv/
+.python/
+.idea/
+__pycache__/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.ruff_cache/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+results/
+figures/
+demo_output.txt

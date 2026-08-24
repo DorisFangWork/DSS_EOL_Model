@@ -1,0 +1,19 @@
+{
+  "scenario_label": "demo_60packs",
+  "data_kind": "synthetic",
+  "fleet_size": 60,
+  "seed": 20260802,
+  "repurpose_capacity": 25.0,
+  "test_bay_capacity": 30.0,
+  "repurpose_min_soh": 0.70,
+  "soh_mean": 0.735,
+  "soh_sd": 0.055,
+  "max_periods_held": 6,
+  "units": {
+    "currency": "SGD",
+    "energy": "kWh",
+    "mass": "kg",
+    "emissions": "kg CO2e"
+  },
+  "interpretation": "Illustrative synthetic mechanism experiment; not an OEM prediction."
+}
