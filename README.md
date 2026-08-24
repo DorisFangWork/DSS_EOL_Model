@@ -1,4 +1,4 @@
-# PhD DSS prototype
+# DSS_EOL — PhD DSS prototype
 
 This repository is the common modelling and experimentation core for the PhD
 research programme on **asset-informed fleet-level allocation of retired EV
