@@ -12,6 +12,8 @@ def test_console_dashboard_snapshot_summary_and_scenario_switch():
     assert not app.metric  # Context is a compact strip, not outcome cards.
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
     app.button(key="nav_Decision workspace").click().run()
+    assert not any(b.key == "run" for b in app.button)
+    app.button(key="choose_Integrated decision").click().run()
     app.button(key="run").click().run(timeout=30)
     snapshot = app.session_state["runs"][-1]
     app.button(key="nav_Dashboard").click().run()
@@ -21,6 +23,25 @@ def test_console_dashboard_snapshot_summary_and_scenario_switch():
     assert any("earlier scenario" in w.value for w in app.warning)
     assert app.metric[0].value == "17.00"  # Historical values retain their snapshot.
     assert app.session_state["runs"][-1] == snapshot
+    assert not app.exception
+
+
+def test_question_cards_select_without_running_and_retain_selection():
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+    app = AppTest.from_file(str(ROOT / "planner/cloud_app.py")).run(timeout=30)
+    app.button(key="nav_Decision workspace").click().run()
+    assert not app.radio
+    assert not any(b.key == "run" for b in app.button)
+    assert len([b for b in app.button if b.key and b.key.startswith("choose_")]) == 4
+    for label in ("Battery admissibility", "Destination determination", "Allocation planning", "Integrated decision"):
+        app.button(key=f"choose_{label}").click().run()
+        assert app.session_state["mode"] == label
+        assert app.button(key=f"choose_{label}").label.startswith("Selected")
+        assert not app.session_state["runs"]
+    app.button(key="nav_Dashboard").click().run()
+    app.button(key="nav_Decision workspace").click().run()
+    assert app.button(key="choose_Integrated decision").label.startswith("Selected")
     assert not app.exception
 
 
@@ -39,7 +60,7 @@ def test_recent_runs_latest_review_comparison_defaults_and_inventory_search():
     app.button(key="run").click().run()
     for _ in range(2):
         app.button(key="nav_Decision workspace").click().run()
-        app.radio(key="mode").set_value("Integrated decision").run()
+        app.button(key="choose_Integrated decision").click().run()
         app.button(key="run").click().run()
     history = app.session_state["runs"]
     assert app.selectbox(key="baseline_run").value == history[1]["run_id"]
@@ -91,6 +112,7 @@ def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
     assert any("Synthetic examples" in item.value for item in app.caption)
     assert app.session_state["page"] == "Dashboard"
     app.button(key="nav_" + "Decision workspace").click().run()
+    app.button(key="choose_Integrated decision").click().run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception
     assert app.metric[0].value == "89,082.37"
@@ -100,7 +122,7 @@ def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
     for mode in ("Battery admissibility", "Destination determination", "Allocation planning", "Integrated decision"):
         app.button(key="nav_" + "Decision workspace").click().run()
-        app.radio(key="mode").set_value(mode).run()
+        app.button(key=f"choose_{mode}").click().run()
         if mode == "Allocation planning":
             assert len(app.get("file_uploader")) == 0
             app.button(key="prepare").click().run()
@@ -144,7 +166,7 @@ def test_configuration_apply_history_comparison_and_stale_evidence():
     assert any("historical snapshot" in w.value for w in app.warning)
     assert app.session_state["runs"][0] == first
     app.button(key="nav_" + "Decision workspace").click().run()
-    assert app.radio(key="mode").value == "Allocation planning"
+    assert app.session_state["mode"] == "Allocation planning"
     assert any("Earlier evidence" in w.value for w in app.warning)
     assert app.button(key="run").disabled
     assert len(app.session_state["runs"]) == 1
@@ -171,14 +193,14 @@ def test_admission_handoff_and_incompatible_comparison():
     app.button(key="open_admission").click().run()
     app.button(key="run").click().run()
     app.button(key="nav_" + "Decision workspace").click().run()
-    app.radio(key="mode").set_value("Allocation planning").run()
+    app.button(key="choose_Allocation planning").click().run()
     assert any("evidence matches" in s.value for s in app.success)
     app.button(key="run").click().run()
     assert app.session_state["runs"][-1]["evaluation"]["economic_objective"] == 17
     # A different horizon must not produce numeric comparison deltas.
     app.session_state["scenario"] = replace(app.session_state["scenario"], horizon="Different evaluation window")
     app.button(key="nav_" + "Decision workspace").click().run()
-    app.radio(key="mode").set_value("Integrated decision").run()
+    app.button(key="choose_Integrated decision").click().run()
     app.button(key="run").click().run()
     history = app.session_state["runs"]
     app.selectbox(key="baseline_run").set_value(history[1]["run_id"]).run()

@@ -248,17 +248,18 @@ def test_planner_independent_integrated_stale_and_infeasible():
     assert not app.exception
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
     app.button(key="nav_" + "Decision workspace").click().run()
+    app.button(key="choose_Integrated decision").click().run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception
     assert app.metric[0].value == "17.00"
     app.button(key="nav_" + "Decision workspace").click().run()
-    app.radio(key="mode").set_value("Battery admissibility").run()
+    app.button(key="choose_Battery admissibility").click().run()
     app.button(key="run").click().run()
     assert not app.exception
     assert [(m.label, m.value) for m in app.metric] == [
         ("Eligible options", "4"), ("Ineligible options", "0"), ("Undetermined options", "0")]
     app.button(key="nav_" + "Decision workspace").click().run()
-    app.radio(key="mode").set_value("Allocation planning").run()
+    app.button(key="choose_Allocation planning").click().run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception and app.metric[0].value == "17.00"
     app.button(key="nav_" + "Configuration").click().run()
@@ -266,7 +267,7 @@ def test_planner_independent_integrated_stale_and_infeasible():
     next(n for n in app.number_input if n.label == "Avoided emissions floor (kg CO2e)").set_value(100.0).run()
     app.button(key="apply").click().run()
     app.button(key="nav_" + "Decision workspace").click().run()
-    app.radio(key="mode").set_value("Integrated decision").run()
+    app.button(key="choose_Integrated decision").click().run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception
     assert any("Infeasible" in e.value for e in app.error)

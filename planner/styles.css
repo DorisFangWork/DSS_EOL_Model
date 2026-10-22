@@ -117,6 +117,16 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 .st-key-latest_card [data-testid="stMetricLabel"] { min-height:0; }
 .st-key-latest_card [data-testid="stMetricValue"] { font-size:1.7rem; }
 [class*="st-key-activity_"] { border-bottom:1px solid #e9e2d3; padding:.4rem 0; }
+.question-copy { display:grid; grid-template-rows:2rem minmax(4.8rem,auto); gap:.5rem; }
+.question-copy h3 { font-size:1.3rem !important; line-height:1.35; margin:0; padding:0; }
+.question-label { color:#52604f; font-size:.9rem; font-weight:600; }
+[class*="st-key-question_option_"] { border:1px solid #a3b18a !important; }
+[class*="st-key-question_selected_"] { background:#faf7f2; border:2px solid #344e41 !important; }
+.st-key-integrated_option { padding:.4rem 0; border-bottom:1px solid #e9e2d3; }
+.st-key-decision_card { border-left:3px solid #344e41 !important; }
+.decision-headline { color:#344e41; font-size:1.5rem; font-weight:650; padding:.6rem 0; }
+.about-intro { background:#faf7f2; border-left:3px solid #588157; padding:1.5rem; }
+.about-intro .product-paths { margin-top:1rem; }
 @media (max-width:700px) {
   .block-container { padding:3.5rem 1rem 2rem; }
   .hero { padding:1.2rem; }
@@ -125,4 +135,5 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
   .product-hero { padding:2rem 1.3rem; }
   .workspace-bar { font-size:.9rem; overflow-wrap:anywhere; }
   .capability-copy, .capability-copy.compact { grid-template-rows:auto; }
+  .question-copy { grid-template-rows:auto auto; }
 }

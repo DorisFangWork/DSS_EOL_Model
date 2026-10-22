@@ -52,6 +52,7 @@ def table(rows):
 
 
 def configure(scenario):
+    st.subheader("Set the rules and limits for this scenario")
     st.caption("Edit a draft, then apply it to the shared scenario. Leaving this page discards unapplied edits.")
     with st.container(border=True):
         st.subheader("Scenario details")
@@ -89,16 +90,19 @@ def configure(scenario):
         with st.expander("Destination requirements, capacity and demand", expanded=True):
             for d in base.destinations:
                 key = f"{base_key}_{d.pathway_id}"
-                st.markdown(f"**{d.name}**")
-                has_soh = st.checkbox("Minimum SOH applies", d.min_soh is not None, key=f"soh_on_{key}")
-                soh = st.number_input("Minimum SOH", min_value=0.0, max_value=1.0, value=d.min_soh or 0.0, step=0.01, key=f"soh_{key}", disabled=not has_soh)
-                has_safety = st.checkbox("Safety-class ceiling applies", d.max_safety_class is not None, key=f"safe_on_{key}")
-                safety = st.number_input("Maximum safety class", min_value=0, value=d.max_safety_class or 0, key=f"safe_{key}", disabled=not has_safety)
-                chem = st.text_input("Allowed chemistries (comma-separated; blank means no rule)", ",".join(d.allowed_chemistries or ()), key=f"chem_{key}")
-                bounded = st.checkbox("Limit destination capacity", d.capacity is not None, key=f"cap_on_{key}")
-                capacity = st.number_input("Destination capacity", min_value=0.0, value=float(d.capacity or 0), key=f"cap_{key}", disabled=not bounded)
-                limit_demand = st.checkbox("Limit compatible demand (packs)", d.pathway_id in base.demand_limits, key=f"dem_on_{key}")
-                demand_value = st.number_input("Compatible demand", min_value=0.0, value=float(base.demand_limits.get(d.pathway_id, len(base.batteries))), key=f"dem_{key}", disabled=not limit_demand)
+                st.subheader(d.name)
+                entry, limits = st.columns(2)
+                entry.caption("ENTRY REQUIREMENTS")
+                limits.caption("CAPACITY & DEMAND")
+                has_soh = entry.checkbox("Minimum SOH applies", d.min_soh is not None, key=f"soh_on_{key}")
+                soh = entry.number_input("Minimum SOH", min_value=0.0, max_value=1.0, value=d.min_soh or 0.0, step=0.01, key=f"soh_{key}", disabled=not has_soh)
+                has_safety = entry.checkbox("Safety-class ceiling applies", d.max_safety_class is not None, key=f"safe_on_{key}")
+                safety = entry.number_input("Maximum safety class", min_value=0, value=d.max_safety_class or 0, key=f"safe_{key}", disabled=not has_safety)
+                chem = entry.text_input("Allowed chemistries (comma-separated; blank means no rule)", ",".join(d.allowed_chemistries or ()), key=f"chem_{key}")
+                bounded = limits.checkbox("Limit destination capacity", d.capacity is not None, key=f"cap_on_{key}")
+                capacity = limits.number_input("Destination capacity", min_value=0.0, value=float(d.capacity or 0), key=f"cap_{key}", disabled=not bounded)
+                limit_demand = limits.checkbox("Limit compatible demand (packs)", d.pathway_id in base.demand_limits, key=f"dem_on_{key}")
+                demand_value = limits.number_input("Compatible demand", min_value=0.0, value=float(base.demand_limits.get(d.pathway_id, len(base.batteries))), key=f"dem_{key}", disabled=not limit_demand)
                 if limit_demand:
                     demand[d.pathway_id] = demand_value
                 destinations.append(replace(d, min_soh=soh if has_soh else None, max_safety_class=safety if has_safety else None,
@@ -128,11 +132,17 @@ def configure(scenario):
 
 
 def show_result(result):
-    st.subheader(mode_label(result["mode"]))
+    title, export = st.columns([3, 1])
+    title.subheader(mode_label(result["mode"]))
+    export.download_button("Download complete run", json.dumps(result, indent=2, allow_nan=False), "dss_run.json", "application/json", width="stretch")
     st.markdown(f'<span class="result-status">{html.escape(result["status"].title())}</span>', unsafe_allow_html=True)
     st.caption(f"Run {result['run_id'][:8]} · Scenario version {result['scenario']['version']} · Status: {result['status']}")
     report = result["evaluation"]
     if report:
+        counts = report["details"]["pathway_counts"]
+        st.markdown('<div class="decision-headline">' + html.escape(" · ".join(
+            [f"{count} {name.replace('_', ' ')}" for name, count in counts.items()] +
+            [f"{report['details']['deferred_count']} deferred"])) + '</div>', unsafe_allow_html=True)
         columns = st.columns(3)
         columns[0].metric(f"Economic objective ({result['scenario']['currency']})", f"{report['economic_objective']:,.2f}")
         columns[1].metric("Assessed avoided emissions (kg CO2e)", f"{report['avoided_co2_kg']:,.2f}")
@@ -180,7 +190,6 @@ def show_result(result):
             st.write("• " + assumption)
         st.json({"scenario_fingerprint": result["scenario_fingerprint"], "implementation": result["implementation"],
                  "eligibility_origin": result["eligibility_origin"], "unknown_policy": result["unknown_policy"], "solver": result["solver"]})
-    st.download_button("Download complete run", json.dumps(result, indent=2, allow_nan=False), "dss_run.json", "application/json")
     if not SYNTHETIC_CLOUD and st.button("Save run to local history", key="save"):
         try:
             RunStore(STORE_PATH).save(result)
@@ -239,8 +248,8 @@ def capability_cards(compact=False):
 
 
 def overview(scenario):
-    st.markdown('<section class="product-hero"><div class="eyebrow">EV BATTERY DISPOSITION · DECISION SUPPORT</div>'
-                '<h1>A clear next step.<br>For every battery.</h1>'
+    st.markdown('<section class="about-intro"><div class="eyebrow">EV BATTERY DISPOSITION · DECISION SUPPORT</div>'
+                '<h2>One planning context. Three connected capabilities.</h2>'
                 '<p>Turn battery information and operational constraints into traceable disposition plans.</p>'
                 '<div class="product-paths"><span>BATTERY INFORMATION</span><b>↔</b><span>DECISION CAPABILITIES</span><b>↔</b><span>PLANNING CONTEXT</span></div></section>', unsafe_allow_html=True)
     left, right = st.columns([1, 1])
@@ -338,8 +347,34 @@ def mode_label(mode):
 
 
 def workspace(scenario):
-    st.write("Choose the question you need to answer. Every capability uses the same applied scenario.")
-    mode = MODES[st.radio("Decision question", list(MODES), index=3, key="mode", horizontal=True, persist_state="session")]
+    st.subheader("What decision do you need to make?")
+    st.caption("Choose a question. These capabilities share the same scenario and can be used independently.")
+    selected = st.session_state.get("mode")
+    choices = [
+        ("Battery admissibility", "Can this battery enter a destination?", "Check eligibility", "✓"),
+        ("Destination determination", "Which destination is preferable?", "Compare destinations", "⇄"),
+        ("Allocation planning", "How should the fleet be allocated?", "Plan allocation", "▥"),
+    ]
+    for column, (name, question, action, symbol) in zip(st.columns(3), choices):
+        active = selected == name
+        with column, st.container(border=True, key=f"question_{'selected' if active else 'option'}_{MODES[name]}"):
+            st.markdown(f'<div class="question-copy"><span class="question-label">{symbol} {html.escape(name)}</span>'
+                        f'<h3>{html.escape(question)}</h3></div>', unsafe_allow_html=True)
+            st.button(("Selected · " if active else "") + action, key=f"choose_{name}",
+                      type="primary" if active else "secondary", on_click=go,
+                      args=("Decision workspace", name), width="stretch")
+    integrated = selected == "Integrated decision"
+    with st.container(key="integrated_option"):
+        explanation, choose = st.columns([3, 2], vertical_alignment="center")
+        explanation.caption("Combine capabilities: assess eligibility and plan the fleet together.")
+        choose.button("Selected · Integrated analysis" if integrated else "Assess and plan together",
+                      key="choose_Integrated decision", on_click=go,
+                      args=("Decision workspace", "Integrated decision"),
+                      type="primary" if integrated else "secondary", width="stretch")
+    if selected not in MODES:
+        st.info("Select a decision question above to see its settings and run the analysis.")
+        return
+    mode = MODES[selected]
     descriptions = {
         "admission": "Assess destination-specific eligibility. Unknown information is reported explicitly.",
         "destination": "Compare eligible options per battery. Preferences are advisory and do not impose a fleet allocation.",
@@ -347,6 +382,7 @@ def workspace(scenario):
         "integrated": "Assess eligibility and jointly allocate the fleet. Destination rankings explain options without constraining the optimiser.",
     }
     with st.container(border=True, key="decision_card"):
+        st.caption("SELECTED ANALYSIS · SETTINGS & ACTION")
         st.subheader(mode_label(mode))
         st.write(descriptions[mode])
         criterion = st.session_state.get("criterion", "economic_value")
@@ -478,7 +514,7 @@ def saved_history():
 
 
 def assumptions(scenario):
-    st.subheader("Model scope")
+    st.subheader("Understand the model and its limits")
     st.write("The DSS is an industry-oriented product prototype. Validated research can strengthen its modular capabilities.")
     st.write("Allocation engine: Model 0 — deterministic, one-period economic optimisation, with admissibility, demand and shared-resource constraints.")
     st.info("Results are planned initial disposition decisions. Delivered service, subsequent qualification, material recovery and credited supply are outside this model's current calculations.")
@@ -509,7 +545,7 @@ with st.sidebar:
                       type="primary" if st.session_state["page"] == destination else "secondary",
                       on_click=go, args=(destination,))
     st.divider()
-    st.caption("Synthetic cloud workspace · Session-only results" if SYNTHETIC_CLOUD else "Local planning workspace")
+    st.caption("Synthetic examples · Session-only results · Download snapshots to retain your work" if SYNTHETIC_CLOUD else "Local planning workspace")
 
 scenario_control, heading, action = st.columns([1.2, 3, 1.2], vertical_alignment="center")
 with scenario_control, st.popover("Scenario", icon=":material/folder_open:", width="stretch"):
@@ -528,8 +564,6 @@ with action:
     st.button("New analysis", icon=":material/add:", on_click=go, args=("Decision workspace",), width="stretch")
 st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
 st.title("About the DSS" if page == "Overview" else page)
-if SYNTHETIC_CLOUD:
-    st.caption("Synthetic examples · Session-only results · Download snapshots to retain your work")
 if "notice" in st.session_state:
     st.success(st.session_state.pop("notice"))
 try:
