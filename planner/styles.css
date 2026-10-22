@@ -1,5 +1,5 @@
 :root { --dss-ink:#153448; --dss-teal:#103e5b; --dss-muted:#526475; --dss-line:#dce4eb; }
-.stApp { background:#f4f6f9; color:#253b4b; }
+.stApp { background:#fff; color:#253b4b; }
 .block-container { max-width:1450px; padding-top:2.3rem; padding-bottom:3rem; }
 h1,h2,h3 { color:var(--dss-ink); letter-spacing:-.035em; }
 h1 { font-size:2rem !important; font-weight:750; }
