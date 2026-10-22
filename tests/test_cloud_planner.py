@@ -5,6 +5,25 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_console_dashboard_snapshot_summary_and_scenario_switch():
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+    app = AppTest.from_file(str(ROOT / "planner/cloud_app.py")).run(timeout=30)
+    assert not app.metric  # Context is a compact strip, not outcome cards.
+    app.selectbox(key="example").set_value("Two-pack capacity example").run()
+    app.button(key="nav_Decision workspace").click().run()
+    app.button(key="run").click().run(timeout=30)
+    snapshot = app.session_state["runs"][-1]
+    app.button(key="nav_Dashboard").click().run()
+    assert app.metric[0].value == "17.00"
+    assert len([b for b in app.button if b.key in {"open_admission", "open_destination", "open_allocation"}]) == 3
+    app.selectbox(key="example").set_value("Synthetic 60-pack fleet").run()
+    assert any("earlier scenario" in w.value for w in app.warning)
+    assert app.metric[0].value == "17.00"  # Historical values retain their snapshot.
+    assert app.session_state["runs"][-1] == snapshot
+    assert not app.exception
+
+
 def test_recent_runs_latest_review_comparison_defaults_and_inventory_search():
     pytest.importorskip("streamlit")
     from streamlit.testing.v1 import AppTest

@@ -266,45 +266,53 @@ def overview(scenario):
 
 
 def dashboard(scenario):
-    columns = st.columns(4)
-    for col, label, value in zip(columns, ["Battery packs", "Destinations", "Shared resources", "Session analyses"],
-                                [len(scenario.batteries), len(scenario.destinations), len(scenario.resources), len(st.session_state["runs"])]):
-        col.metric(label, value)
-    left, right = st.columns([1.3, 1])
-    with left, st.container(border=True, key="context_card"):
-        st.subheader("Active planning context")
-        st.write(f"**{scenario.scenario_id}** · Version {scenario.version}")
-        st.write(scenario.decision_maker)
-        st.caption(scenario.horizon)
-        with st.expander("Destination capacity and demand"):
-            table([{"destination": d.name, "capacity": d.capacity, "demand_limit_packs": scenario.demand_limits.get(d.pathway_id)} for d in scenario.destinations])
-        st.button("Configure scenario", on_click=go, args=("Configuration",), width="stretch")
-    with right, st.container(border=True, key="latest_card"):
+    history = st.session_state["runs"]
+    st.markdown('<div class="context-strip">' + ''.join(
+        f'<span><strong>{value}</strong> {label}</span>' for value, label in [
+            (len(scenario.batteries), "battery packs"), (len(scenario.destinations), "destinations"),
+            (len(scenario.resources), "shared resources"), (len(history), "session analyses")]) + '</div>', unsafe_allow_html=True)
+    if not history:
+        capability_cards(compact=True)
+    with st.container(border=True, key="latest_card"):
         st.subheader("Latest analysis")
-        history = st.session_state["runs"]
         if history:
             latest = history[-1]
-            st.write(f"**{latest['status']}** · {mode_label(latest['mode'])}")
-            st.caption(f"{latest['scenario']['scenario_id']} · Run {latest['run_id'][:8]}")
+            summary, action = st.columns([3, 1])
+            summary.caption(f"{mode_label(latest['mode'])} · {latest['status']} · {latest['scenario']['scenario_id']} · {latest['run_id'][:8]}")
+            action.button("Review results", key="review_latest", type="primary", on_click=review_run, args=(latest["run_id"],), width="stretch")
             if not current_basis(latest, scenario):
                 st.warning("This analysis uses an earlier scenario or model version.")
             else:
-                st.success("Matches the applied scenario and current model.")
+                st.caption("Current inputs · Matches the applied scenario and model.")
             if latest.get("evaluation"):
-                st.write(f"Planned economic value: **{latest['scenario']['currency']} {latest['evaluation']['economic_objective']:,.2f}**")
-            st.button("Review results", key="review_latest", on_click=review_run, args=(latest["run_id"],), width="stretch")
+                chart, outcomes = st.columns([1.5, 1])
+                with chart:
+                    allocation_chart(latest)
+                with outcomes:
+                    report = latest["evaluation"]
+                    st.metric(f"Economic objective ({latest['scenario']['currency']})", f"{report['economic_objective']:,.2f}")
+                    st.metric("Assessed avoided emissions (kg CO2e)", f"{report['avoided_co2_kg']:,.2f}")
+            elif latest.get("solver"):
+                st.warning("No certified feasible plan. Review the analysis before using its results.")
+            else:
+                table([{"status": status.title(), "battery_destination_options": sum(r["status"] == status for r in latest["eligibility"])}
+                       for status in ("eligible", "ineligible", "undetermined")])
         else:
-            st.write("Your workspace is ready for its first analysis.")
-            st.caption("Start with any capability, or use an integrated analysis to assess eligibility and plan allocation together.")
-            st.button("Start integrated analysis", type="primary", on_click=go, args=("Decision workspace", "Integrated decision"), width="stretch")
-    st.subheader("Decision tools")
-    st.caption("Use independently or together with the same scenario and shared evidence.")
-    capability_cards(compact=True)
+            st.write("Ready to plan your battery dispositions")
+            st.caption("Choose any tool above, or assess eligibility and create a fleet plan together.")
+            st.button("Start integrated analysis", type="primary", on_click=go, args=("Decision workspace", "Integrated decision"))
+    if history:
+        capability_cards(compact=True)
+    with st.expander("Planning context and limits"):
+        st.write(scenario.decision_maker)
+        st.caption(scenario.horizon)
+        table([{"destination": d.name, "capacity": d.capacity, "demand_limit_packs": scenario.demand_limits.get(d.pathway_id)} for d in scenario.destinations])
+        st.button("Configure scenario", on_click=go, args=("Configuration",))
     st.subheader("Recent activity")
     history = st.session_state["runs"]
     if history:
         for r in reversed(history[-5:]):
-            with st.container(border=True):
+            with st.container(key=f"activity_{r['run_id']}"):
                 summary, action = st.columns([4, 1])
                 with summary:
                     st.write(f"**{mode_label(r['mode'])}** · {r['status']}")
@@ -503,7 +511,8 @@ with st.sidebar:
     st.divider()
     st.caption("Synthetic cloud workspace · Session-only results" if SYNTHETIC_CLOUD else "Local planning workspace")
 
-with st.expander("Scenario controls", expanded=False):
+scenario_control, heading, action = st.columns([1.2, 3, 1.2], vertical_alignment="center")
+with scenario_control, st.popover("Scenario", icon=":material/folder_open:", width="stretch"):
     example = st.selectbox("Starting scenario", ["Synthetic 60-pack fleet", "Two-pack capacity example"], key="example")
     st.caption("Changing the example replaces inputs; completed runs stay in this session.")
     if st.session_state.get("loaded_example") != example:
@@ -513,9 +522,8 @@ with st.expander("Scenario controls", expanded=False):
     st.download_button("Download current scenario", scenario_json(scenario), "scenario.json", "application/json", width="stretch")
 
 page = st.session_state["page"]
-heading, action = st.columns([4, 1])
 with heading:
-    st.markdown('<div class="workspace-bar">ACTIVE SCENARIO <span>' + html.escape(scenario.scenario_id) + f' · v{scenario.version} · {len(scenario.batteries)} packs</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="workspace-bar">' + html.escape(scenario.scenario_id) + f'<span>v{scenario.version} · {len(scenario.batteries)} packs</span></div>', unsafe_allow_html=True)
 with action:
     st.button("New analysis", icon=":material/add:", on_click=go, args=("Decision workspace",), width="stretch")
 st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
