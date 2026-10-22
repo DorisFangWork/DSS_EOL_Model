@@ -23,7 +23,7 @@ STORE_PATH = ROOT / "results" / "dss" / "runs.sqlite"
 SYNTHETIC_CLOUD = globals().get("SYNTHETIC_CLOUD", False)
 MODES = {"Battery admissibility": "admission", "Destination determination": "destination",
          "Allocation planning": "allocation", "Integrated decision": "integrated"}
-PAGES = ["Dashboard", "Decision workspace", "Configuration", "Results & comparison", "Model & assumptions"]
+PAGES = ["Overview", "Dashboard", "Decision workspace", "Configuration", "Results & comparison", "Model & assumptions"]
 
 st.set_page_config(page_title="Battery disposition DSS", page_icon="🔋", layout="wide")
 st.markdown('<style>' + (Path(__file__).with_name("styles.css")).read_text(encoding="utf-8") + '</style>', unsafe_allow_html=True)
@@ -218,9 +218,36 @@ def capability_cards():
             st.button("Open capability", key=f"open_{MODES[name]}", on_click=go, args=("Decision workspace", name), width="stretch")
 
 
+def overview(scenario):
+    st.markdown('<section class="product-hero"><div class="eyebrow">EV BATTERY DISPOSITION · DECISION SUPPORT</div>'
+                '<h1>A clear next step.<br>For every battery.</h1>'
+                '<p>Turn battery information and operational constraints into traceable disposition plans.</p>'
+                '<div class="product-paths"><span>BATTERY INFORMATION</span><b>↔</b><span>DECISION CAPABILITIES</span><b>↔</b><span>PLANNING CONTEXT</span></div></section>', unsafe_allow_html=True)
+    left, right = st.columns([1, 1])
+    left.button("Open planning dashboard", type="primary", on_click=go, args=("Dashboard",), width="stretch")
+    right.button("Explore a decision", on_click=go, args=("Decision workspace",), width="stretch")
+    st.subheader("Make the trade-offs visible")
+    st.write("A battery can suit more than one destination. Limited capacity, compatible demand and competing priorities determine which options make sense for the fleet. Disposition DSS brings these decisions into one shared planning workspace.")
+    st.caption("For OEM disposition planners and teams evaluating second-life and recycling options.")
+    capability_cards()
+    left, right = st.columns(2)
+    with left, st.container(border=True):
+        st.subheader("Bring a decision. Leave with a plan.")
+        st.write("Define destination requirements and operational limits. Assess available options, allocate batteries and compare alternative scenarios.")
+        st.write("Review battery-level assignments, eligibility explanations and the economic and emissions assessments behind the result. Export the complete decision record for discussion.")
+    with right, st.container(border=True):
+        st.subheader("Start with your planning question")
+        st.write("Which batteries meet an entry requirement? Where does scarce repurposing capacity add the most assessed value? How does the plan change when capacity or demand changes?")
+        st.write("Use each capability separately or together. Shared inputs and traceable evidence connect the decisions.")
+    with st.expander("Evaluate the prototype for your organisation"):
+        st.write("A useful pilot starts with one decision owner, a defined battery population and agreed destination rules. Validate assessment values and capacity assumptions, compare plans against current practice, and review recommendations with operational specialists.")
+        st.info("This private preview uses synthetic data and session-only cloud history. Industry deployment requires validated operational data, durable storage and organisation-specific access controls. Download results before ending a session.")
+        st.button("Review model scope", on_click=go, args=("Model & assumptions",))
+
+
 def dashboard(scenario):
     st.markdown('<div class="hero"><div class="eyebrow">BATTERY DISPOSITION · DECISION SUPPORT</div>'
-                '<h2>Plan the next destination.</h2><p>Assess options, explore trade-offs, and build a traceable disposition plan.</p></div>', unsafe_allow_html=True)
+                '<h2>Your planning overview.</h2><p>Review the active scenario, open a decision and track completed analyses.</p></div>', unsafe_allow_html=True)
     columns = st.columns(4)
     for col, label, value in zip(columns, ["Battery packs", "Destinations", "Shared resources", "Session analyses"],
                                 [len(scenario.batteries), len(scenario.destinations), len(scenario.resources), len(st.session_state["runs"])]):
@@ -294,7 +321,9 @@ def workspace(scenario):
                 st.success("Eligibility evidence matches this scenario.")
             else:
                 st.warning("Prepare matching eligibility evidence, or run Battery admissibility first. Earlier evidence cannot be reused after scenario changes.")
-        if st.button("Run selected capability", type="primary", key="run"):
+        actions = {"admission": "Assess battery eligibility", "destination": "Compare destination options",
+                   "allocation": "Create allocation plan", "integrated": "Assess and create plan"}
+        if st.button(actions[mode], type="primary", key="run"):
             try:
                 with st.spinner("Evaluating the decision…"):
                     result = run(scenario, mode, supplied_eligibility=evidence, criterion=criterion, unknown_policy=unknown)
@@ -392,7 +421,8 @@ def assumptions(scenario):
     st.write("The DSS is an industry-oriented product prototype. Validated research can strengthen its modular capabilities.")
     st.write("Allocation engine: Model 0 — deterministic, one-period economic optimisation, with admissibility, demand and shared-resource constraints.")
     st.info("Results are planned initial disposition decisions. Delivered service, subsequent qualification, material recovery and credited supply are outside this model's current calculations.")
-    st.subheader("Active scenario assumptions")
+    st.subheader("Source scenario notes")
+    st.caption("These notes describe the original example. Applied configuration and saved run snapshots define the current planning case.")
     st.write(scenario.source)
     for assumption in scenario.assumptions:
         st.write("• " + assumption)
@@ -408,8 +438,7 @@ if "next_page" in st.session_state:
 st.session_state.setdefault("runs", [])
 with st.sidebar:
     st.markdown('<div class="brand"><span class="brand-mark">D</span><div>DISPOSITION DSS<small>EV BATTERY DECISION SUPPORT</small></div></div>', unsafe_allow_html=True)
-    st.radio("Workspace navigation", PAGES, key="page", label_visibility="collapsed")
-    st.divider()
+    st.caption("PLANNING CONTEXT")
     example = st.selectbox("Starting scenario", ["Synthetic 60-pack fleet", "Two-pack capacity example"], key="example")
     st.caption("Switching examples replaces the applied configuration. Completed runs remain available for comparison.")
     if st.session_state.get("loaded_example") != example:
@@ -420,15 +449,18 @@ with st.sidebar:
     st.download_button("Download current scenario", scenario_json(scenario), "scenario.json", "application/json", width="stretch")
     st.caption("Synthetic cloud workspace" if SYNTHETIC_CLOUD else "Local planning workspace")
 
+st.markdown('<div class="app-masthead"><strong>DISPOSITION DSS</strong><span>BATTERY LIFECYCLE DECISION SUPPORT</span></div>', unsafe_allow_html=True)
+st.radio("Workspace navigation", PAGES, key="page", horizontal=True, label_visibility="collapsed")
 page = st.session_state["page"]
 st.markdown('<div class="eyebrow">DISPOSITION PLANNING / ' + html.escape(page.upper()) + '</div>', unsafe_allow_html=True)
-st.title(page)
+if page != "Overview":
+    st.title(page)
 if SYNTHETIC_CLOUD:
     st.caption("Synthetic examples · Session-only results · Download snapshots to retain your work")
 if "notice" in st.session_state:
     st.success(st.session_state.pop("notice"))
 try:
-    {"Dashboard": dashboard, "Decision workspace": workspace, "Configuration": configure,
+    {"Overview": overview, "Dashboard": dashboard, "Decision workspace": workspace, "Configuration": configure,
      "Results & comparison": results_page, "Model & assumptions": assumptions}[page](scenario)
 except (ValueError, TypeError, KeyError, UnicodeDecodeError) as error:
     st.error(f"Input needs attention: {error}")

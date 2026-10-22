@@ -5,6 +5,25 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_product_overview_navigation_and_action_labels():
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+    app = AppTest.from_file(str(ROOT / "planner/cloud_app.py")).run(timeout=30)
+    assert app.radio(key="page").value == "Overview"
+    next(b for b in app.button if b.label == "Open planning dashboard").click().run()
+    assert app.radio(key="page").value == "Dashboard"
+    for mode, action in [("admission", "Assess battery eligibility"),
+                         ("destination", "Compare destination options"),
+                         ("allocation", "Create allocation plan")]:
+        app.radio(key="page").set_value("Overview").run()
+        app.button(key=f"open_{mode}").click().run()
+        assert app.radio(key="page").value == "Decision workspace"
+        assert app.button(key="run").label == action
+        assert not app.exception
+    app.radio(key="page").set_value("Model & assumptions").run()
+    assert any("original example" in c.value for c in app.caption)
+
+
 def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
     pytest.importorskip("streamlit")
     from streamlit.testing.v1 import AppTest
@@ -18,7 +37,7 @@ def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
     assert len(app.get("file_uploader")) == 0
     assert len(app.text_area) == 0
     assert any("Synthetic examples" in item.value for item in app.caption)
-    assert app.radio(key="page").value == "Dashboard"
+    assert app.radio(key="page").value == "Overview"
     app.radio(key="page").set_value("Decision workspace").run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception
@@ -38,7 +57,7 @@ def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
         assert app.radio(key="page").value == "Results & comparison"
         if mode in ("Allocation planning", "Integrated decision"):
             assert app.metric[0].value == "17.00"
-    for page in ("Dashboard", "Configuration", "Model & assumptions", "Results & comparison"):
+    for page in ("Overview", "Dashboard", "Configuration", "Model & assumptions", "Results & comparison"):
         app.radio(key="page").set_value(page).run()
         assert not app.exception and not app.error
         assert len(app.get("file_uploader")) == 0
