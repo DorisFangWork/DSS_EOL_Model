@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scenario": {
+    "scenario_id": "two_pack_scarcity", "version": 1,
+    "source": "Analytic synthetic example; values chosen to demonstrate opportunity cost",
+    "decision_maker": "OEM initial disposition planner (illustrative)", "currency": "SGD",
+    "batteries": [
+      {"asset_id": "A", "soh": 0.9, "chemistry": "NMC", "safety_class": 0, "nameplate_kwh": 60, "mass_kg": 400},
+      {"asset_id": "B", "soh": 0.8, "chemistry": "NMC", "safety_class": 0, "nameplate_kwh": 60, "mass_kg": 400}
+    ],
+    "destinations": [
+      {"pathway_id": "repurpose", "name": "Repurpose", "capacity": 1, "min_soh": 0.7},
+      {"pathway_id": "recycle", "name": "Recycle"}
+    ],
+    "values": [
+      {"asset_id": "A", "pathway_id": "repurpose", "economic_value": 10, "avoided_co2_kg": 2},
+      {"asset_id": "A", "pathway_id": "recycle", "economic_value": 9, "avoided_co2_kg": 1},
+      {"asset_id": "B", "pathway_id": "repurpose", "economic_value": 8, "avoided_co2_kg": 2},
+      {"asset_id": "B", "pathway_id": "recycle", "economic_value": 0, "avoided_co2_kg": 1}
+    ],
+    "deferral_costs": {"A": 2, "B": 2},
+    "assumptions": [
+      "Both packs individually prefer repurposing; only one slot is available.",
+      "The best joint allocation sends B to repurposing and A to recycling: 8 + 9 = 17.",
+      "Ranking packs by their repurposing value alone would give 10 + 0 = 10."
+    ]
+  }
+}

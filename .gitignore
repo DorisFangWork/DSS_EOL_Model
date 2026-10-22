@@ -13,3 +13,6 @@ dist/
 results/
 figures/
 demo_output.txt
+.streamlit/secrets.toml
+.env
+.env.*

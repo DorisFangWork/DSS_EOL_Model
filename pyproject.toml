@@ -16,9 +16,10 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=9.1,<10"]
+planner = ["streamlit==1.66.0"]
 
 [tool.setuptools]
-packages = ["dss", "level0"]
+packages = ["dss", "level0", "planner"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"

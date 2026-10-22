@@ -1,20 +1,53 @@
-# DSS_EOL — PhD DSS prototype
+# DSS_EOL — DSS prototype
 
-This repository is the common modelling and experimentation core for the PhD
-research programme on **asset-informed fleet-level allocation of retired EV
-batteries**. It is organised by increasing problem complexity rather than by
-favoured algorithms.
+This repository supports two interconnected targets under the service–recovery
+motivation: a working EV battery disposition DSS informed by the SLR, and a
+focused PhD investigation likely within flow allocation.
 
-| Level | Problem increment | Canonical model/role |
-| --- | --- | --- |
-| 0 | one period, heterogeneous assets, admissibility, shared capacity | exact static MILP and myopic benchmark |
-| 1 | time, passive carry-over, degradation, repeated arrivals | small exact MDP/DP for mechanism identification |
-| 2 | realistic stochastic arrivals, markets, capacities and heterogeneity | core fleet-level MDP/CMDP and scalable policy evaluation |
-| 3 | optionally, one limitation revealed by Level 2 | focused risk, information, scalability, or reliability extension if earned |
+The DSS has three independently callable, interacting capabilities:
 
-Level 0 is fully implemented. Later levels must reuse the stable interfaces in
-`dss/` and retain Level 0's semantics and verified public benchmark APIs as a
-reduction case; ordinary maintenance does not require freezing its source files.
+| Capability | Current implementation |
+| --- | --- |
+| Battery admissibility | Configurable entry rules; eligible, ineligible or undetermined, with reasons |
+| Destination determination | Economic or avoided-emissions comparison, explicit ties and advisory preferences |
+| Flow allocation | Model 0: exact deterministic one-period allocation under shared constraints |
+
+Integrated execution uses eligibility constraints and jointly selects destinations
+and quantities. Destination rankings remain advisory. The previous Level 1–3
+development ladder is provisional, not the application's structure.
+
+## Modular planner quick start
+
+Open this folder in PyCharm and select `.venv/Scripts/python.exe` as the project
+interpreter. In its terminal, run:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run planner\app.py --server.address 127.0.0.1
+```
+
+Alternatively run `planner/run_planner.ps1`. For a PyCharm run configuration, use
+module `streamlit`, parameters `run planner/app.py --server.address 127.0.0.1`,
+and this repository as the working directory. The local URL appears in the terminal.
+If the UI dependency is missing, install the optional dependency using
+`python -m pip install -e ".[planner]"` in the Python 3.11 environment.
+
+Choose the existing synthetic 60-pack scenario or the two-pack capacity example.
+Use any individual capability or Integrated decision. Scenario JSON supports
+complete custom assessments; CSV/manual entry supports battery observations.
+Imported packs use synthetic valuation formulas only when explicitly selected.
+Saved runs and full scenario snapshots remain in ignored `results/dss/runs.sqlite`.
+
+The existing `demo/app.py` remains the dedicated Level 0 research demonstration.
+The new `planner/app.py` is the entry point for the three-capability system.
+
+See [the architecture and API guide](docs/modular_dss.md) for contracts,
+execution modes, persistence, and the incremental file mapping.
+
+For personal online viewing, deploy `planner/cloud_app.py` with Python 3.11 and
+`planner/requirements.txt`. This entrypoint offers synthetic examples and downloads
+and disables data uploads and server-side history. App access must separately be
+set to private in Streamlit Community Cloud. See the
+[private deployment instructions](docs/streamlit_deployment.md).
 
 ## Level 0 quick start
 
