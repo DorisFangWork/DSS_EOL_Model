@@ -127,6 +127,18 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 .decision-headline { color:#344e41; font-size:1.5rem; font-weight:650; padding:.6rem 0; }
 .about-intro { background:#faf7f2; border-left:3px solid #588157; padding:1.5rem; }
 .about-intro .product-paths { margin-top:1rem; }
+/* Aptos is resolved on the viewing device; icons and code keep their own fonts. */
+[data-testid="stMain"] { font-family:"Aptos", "Segoe UI", "Source Sans", sans-serif; color:#27332e; }
+[data-testid="stMain"] :is(h1,h2,h3,h4,p,label,input,textarea,button,table,[role="combobox"],[role="tab"],[data-testid="stMetricValue"]) {
+  font-family:"Aptos", "Segoe UI", "Source Sans", sans-serif;
+}
+[data-testid="stMain"] :is(input,textarea,[role="combobox"],.dss-table td,.allocation-row) { color:#27332e; }
+[data-testid="stMain"] [data-testid="stMarkdownContainer"] { color:inherit; }
+[data-testid="stMain"] :is(h1,h2,h3,h4) { color:#344e41; }
+[data-testid="stMain"] [data-testid="stCaptionContainer"] p,
+[data-testid="stMain"] [data-testid="stMetricLabel"] p { color:#52604f; }
+[data-testid="stMain"] button[kind="primary"] { color:#fff; }
+[data-testid="stMain"] button[kind="secondary"] { color:#344e41; }
 @media (max-width:700px) {
   .block-container { padding:3.5rem 1rem 2rem; }
   .hero { padding:1.2rem; }
