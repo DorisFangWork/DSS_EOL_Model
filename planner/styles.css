@@ -2,13 +2,16 @@
 .stApp { background:#fff; color:#344e41; }
 .block-container { max-width:1450px; padding-top:2.3rem; padding-bottom:3rem; }
 h1,h2,h3 { color:var(--dss-ink); letter-spacing:-.035em; }
-h1 { font-size:2rem !important; font-weight:750; }
+h1 { font-size:2rem !important; font-weight:750; letter-spacing:-.015em; }
 h2 { font-size:1.4rem !important; }
 h3 { font-size:1.25rem !important; font-weight:650; }
 [data-testid="stCaptionContainer"] { color:var(--dss-muted); opacity:1; }
 [data-testid="stCaptionContainer"] p { color:var(--dss-muted); font-size:.95rem; line-height:1.6; }
 [data-testid="stMarkdownContainer"] p { line-height:1.6; }
 [data-testid="stWidgetLabel"] p, button p, [role="tab"] p { font-size:1rem; }
+/* Streamlit's nested markdown rules otherwise reduce button text to 14px. */
+.stApp button [data-testid="stMarkdownContainer"] p,
+.stApp [role="tab"] [data-testid="stMarkdownContainer"] p { font-size:1rem !important; }
 input, textarea, [data-baseweb="select"] { font-size:1rem !important; }
 [data-testid="stSidebar"] { background:#fff; border-right:1px solid var(--dss-line); }
 [data-testid="stSidebar"] [role="radiogroup"] { gap:.35rem; }
@@ -22,9 +25,9 @@ button[kind="primary"]:hover { background:#344e41; border-color:#588157; box-sha
 button[kind="secondary"] { background:white; border-color:#e9e2d3; border-radius:7px; }
 button:disabled { opacity:.55; }
 .brand { display:flex; align-items:center; gap:.75rem; color:#344e41; font-size:.84rem; font-weight:750; letter-spacing:.04em; margin:.4rem 0 1.6rem; }
-.brand small { display:block; font-size:.7rem; letter-spacing:.02em; margin-top:.35rem; color:#52604f; }
+.brand small { display:block; font-size:.8rem; letter-spacing:.02em; margin-top:.35rem; color:#52604f; }
 .brand-mark { display:grid; place-items:center; width:40px; height:40px; border-radius:3px; background:#344e41; color:white; font-size:1.4rem; }
-.eyebrow { color:#52604f; font-size:.85rem; letter-spacing:.02em; font-weight:700; }
+.eyebrow { color:#52604f; font-size:.9rem; letter-spacing:.02em; font-weight:700; }
 .hero { background:#344e41; border-radius:3px; padding:1.5rem 1.8rem; margin:.4rem 0 1.4rem; }
 .hero .eyebrow { color:#a3b18a; }
 .hero h2 { color:white; font-size:1.9rem; margin:.45rem 0; padding:0; }
