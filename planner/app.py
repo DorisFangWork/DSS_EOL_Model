@@ -187,6 +187,11 @@ def current_basis(result, scenario):
             and result["implementation"]["core_source_sha256"] == implementation_record()["core_source_sha256"])
 
 
+def review_run(run_id):
+    st.session_state["selected_run"] = run_id
+    go("Results & comparison")
+
+
 def allocation_chart(result):
     report = result.get("evaluation")
     if not report:
@@ -211,11 +216,12 @@ def capability_cards():
         ("Allocation planning", "Fleet & constraints", "Distribute batteries across destinations within demand and shared capacity limits."),
     ]
     for column, (name, label, description) in zip(st.columns(3), descriptions):
-        with column, st.container(border=True):
-            st.caption(label.upper())
-            st.subheader(name)
-            st.write(description)
-            st.button("Open capability", key=f"open_{MODES[name]}", on_click=go, args=("Decision workspace", name), width="stretch")
+        with column, st.container(border=True, key=f"capability_{MODES[name]}"):
+            st.markdown('<div class="capability-copy">'
+                        f'<div class="eyebrow">{html.escape(label.upper())}</div>'
+                        f'<h3>{html.escape(name)}</h3><p>{html.escape(description)}</p></div>', unsafe_allow_html=True)
+            action = {"admission": "Assess eligibility", "destination": "Compare options", "allocation": "Plan allocation"}[MODES[name]]
+            st.button(action, key=f"open_{MODES[name]}", on_click=go, args=("Decision workspace", name), width="stretch")
 
 
 def overview(scenario):
@@ -275,7 +281,7 @@ def dashboard(scenario):
                 st.success("Matches the applied scenario and current model.")
             if latest.get("evaluation"):
                 st.write(f"Planned economic value: **{latest['scenario']['currency']} {latest['evaluation']['economic_objective']:,.2f}**")
-            st.button("Review results", on_click=go, args=("Results & comparison",), width="stretch")
+            st.button("Review results", key="review_latest", on_click=review_run, args=(latest["run_id"],), width="stretch")
         else:
             st.write("Your workspace is ready for its first analysis.")
             st.caption("Start with any capability, or use an integrated analysis to assess eligibility and plan allocation together.")
@@ -283,14 +289,26 @@ def dashboard(scenario):
     st.subheader("Recent activity")
     history = st.session_state["runs"]
     if history:
-        table([{"scenario": r["scenario"]["scenario_id"], "capability": mode_label(r["mode"]),
-                "status": r["status"], "run": r["run_id"][:8],
-                "planning_basis": "Current" if current_basis(r, scenario) else "Historical"}
-               for r in reversed(history[-10:])])
+        for r in reversed(history[-5:]):
+            with st.container(border=True):
+                summary, action = st.columns([4, 1])
+                with summary:
+                    st.write(f"**{mode_label(r['mode'])}** · {r['status']}")
+                    basis = "Current inputs" if current_basis(r, scenario) else "Historical inputs"
+                    st.caption(f"{r['scenario']['scenario_id']} · {r['run_id'][:8]} · {basis}")
+                action.button("Open run", key=f"review_{r['run_id']}", on_click=review_run, args=(r["run_id"],), width="stretch")
+        st.caption("Showing the latest five runs. All session runs remain in Results & comparison.")
     else:
         st.caption("Completed assessments and allocation plans will appear here.")
     with st.expander(f"Battery inventory · {len(scenario.batteries)} packs"):
-        table(plain(scenario.batteries))
+        query = st.text_input("Find a battery", placeholder="Battery ID or chemistry", key="inventory_search").strip().casefold()
+        rows = [b for b in plain(scenario.batteries) if not query or
+                query in str(b["asset_id"]).casefold() or query in str(b.get("chemistry", "")).casefold()]
+        st.caption(f"{len(rows)} of {len(scenario.batteries)} batteries")
+        if rows:
+            table(rows)
+        else:
+            st.info("No batteries match your search. Try another ID or chemistry.")
 
 
 def mode_label(mode):
@@ -298,6 +316,7 @@ def mode_label(mode):
 
 
 def workspace(scenario):
+    st.caption(f"Active scenario: {scenario.scenario_id} · Version {scenario.version} · {len(scenario.batteries)} packs")
     st.write("Choose the question you need to answer. Every capability uses the same applied scenario.")
     mode = MODES[st.radio("Decision question", list(MODES), index=3, key="mode", horizontal=True, persist_state="session")]
     descriptions = {
@@ -339,6 +358,15 @@ def workspace(scenario):
                     result = run(scenario, mode, supplied_eligibility=evidence, criterion=criterion, unknown_policy=unknown)
                 st.session_state["runs"].append(result)
                 st.session_state["selected_run"] = result["run_id"]
+                # Prefer comparable plans over eligibility-only assessments on a new run.
+                if result.get("evaluation") and result["evaluation"]["feasible"]:
+                    for previous in reversed(st.session_state["runs"][:-1]):
+                        if (previous.get("evaluation") and previous["evaluation"]["feasible"]
+                                and previous["scenario"]["scenario_id"] == result["scenario"]["scenario_id"]
+                                and compare_runs(previous, result)["differences"]):
+                            st.session_state["baseline_run"] = previous["run_id"]
+                            st.session_state["alternative_run"] = result["run_id"]
+                            break
                 st.session_state["prepared_evidence"] = {"schema_version": 1, "scenario_fingerprint": result["scenario_fingerprint"], "records": result["eligibility"]}
                 go("Results & comparison")
                 st.rerun()
@@ -475,7 +503,7 @@ with heading:
     st.markdown('<div class="workspace-bar">DISPOSITION DSS <span>/ WORKSPACE</span></div>', unsafe_allow_html=True)
 with action:
     st.button("New analysis", icon=":material/add:", on_click=go, args=("Decision workspace",), width="stretch")
-st.divider()
+st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
 st.title("About the DSS" if page == "Overview" else page)
 if SYNTHETIC_CLOUD:
     st.caption("Synthetic examples · Session-only results · Download snapshots to retain your work")

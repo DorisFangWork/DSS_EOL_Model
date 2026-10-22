@@ -5,6 +5,36 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_recent_runs_latest_review_comparison_defaults_and_inventory_search():
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+    app = AppTest.from_file(str(ROOT / "planner/cloud_app.py")).run(timeout=30)
+    app.selectbox(key="example").set_value("Two-pack capacity example").run()
+    app.text_input(key="inventory_search").set_value("nmc").run()
+    assert any("2 of 2 batteries" in c.value for c in app.caption)
+    app.text_input(key="inventory_search").set_value("missing-id").run()
+    assert any("No batteries match" in i.value for i in app.info)
+    app.text_input(key="inventory_search").set_value("A").run()
+    assert any("1 of 2 batteries" in c.value for c in app.caption)
+    app.button(key="open_admission").click().run()
+    app.button(key="run").click().run()
+    for _ in range(2):
+        app.button(key="nav_Decision workspace").click().run()
+        app.radio(key="mode").set_value("Integrated decision").run()
+        app.button(key="run").click().run()
+    history = app.session_state["runs"]
+    assert app.selectbox(key="baseline_run").value == history[1]["run_id"]
+    assert app.selectbox(key="alternative_run").value == history[2]["run_id"]
+    app.selectbox(key="selected_run").set_value(history[0]["run_id"]).run()
+    app.button(key="nav_Dashboard").click().run()
+    app.button(key="review_latest").click().run()
+    assert app.selectbox(key="selected_run").value == history[2]["run_id"]
+    app.button(key="nav_Dashboard").click().run()
+    app.button(key=f"review_{history[0]['run_id']}").click().run()
+    assert app.selectbox(key="selected_run").value == history[0]["run_id"]
+    assert not app.exception and not app.error
+
+
 def test_product_overview_navigation_and_action_labels():
     pytest.importorskip("streamlit")
     from streamlit.testing.v1 import AppTest
