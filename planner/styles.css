@@ -38,6 +38,8 @@ button[kind="secondary"] { border-color:#cbd9df; }
 .workspace-bar { color:#103e5b; font-size:.82rem; letter-spacing:.08em; font-weight:650; padding:.6rem 0; }
 .workspace-bar span { color:#718496; font-weight:400; margin-left:.5rem; }
 .st-key-navigation button { justify-content:flex-start; border:0; border-radius:6px; padding:.65rem .8rem; text-align:left; }
+.st-key-navigation button > div { justify-content:flex-start; width:100%; }
+.st-key-navigation button p { text-align:left; }
 .st-key-navigation button[kind="secondary"] { background:transparent; color:#405566; }
 .st-key-navigation button[kind="secondary"]:hover { background:#e7eef4; color:#103e5b; }
 .st-key-navigation button[kind="primary"] { background:#103e5b; color:white; }
@@ -48,6 +50,12 @@ button:focus-visible, a:focus-visible { outline:3px solid #397ba5 !important; ou
 [class*="st-key-capability_"] > div { height:100%; }
 .capability-copy { display:grid; grid-template-rows:1.8rem 3rem 6.5rem; gap:.5rem; }
 .capability-copy h3, .capability-copy p { margin:0; padding:0; line-height:1.5; }
+.capability-copy.compact { grid-template-rows:auto 3rem; gap:.3rem; }
+.block-container { padding-top:3.5rem; }
+[data-testid="stMetric"] { padding:.65rem .9rem; border-radius:6px; }
+[data-testid="stMetricValue"] { font-size:1.8rem; }
+.dss-table thead th { position:sticky; top:0; z-index:1; }
+.dss-table tbody tr:hover { background:#edf3f8; }
 .header-rule { border-bottom:1px solid #e2e8ee; margin:0 0 .5rem; }
 .product-hero { background:linear-gradient(120deg,#e5eef4 0%,#f5f8fa 65%,#d4e3ed 100%); padding:3.8rem 3rem; border-bottom:5px solid #103e5b; }
 .product-hero h1 { font-size:clamp(2.6rem,4.2vw,4.4rem) !important; line-height:1.12; font-weight:450; padding:1.2rem 0; }

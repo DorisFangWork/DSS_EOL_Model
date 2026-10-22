@@ -88,6 +88,11 @@ def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
         app.button(key="run").click().run(timeout=30)
         assert not app.exception and not app.error
         assert app.session_state["page"] == "Results & comparison"
+        expected_tab = {"Battery admissibility": "Admissibility", "Destination determination": "Destination comparison",
+                        "Allocation planning": "Allocation details", "Integrated decision": "Allocation details"}[mode]
+        assert app.tabs[1].label == expected_tab
+        if mode in ("Battery admissibility", "Destination determination"):
+            assert sum(int(m.value) for m in app.metric) == 4
         if mode in ("Allocation planning", "Integrated decision"):
             assert app.metric[0].value == "17.00"
     for page in ("Overview", "Dashboard", "Configuration", "Model & assumptions", "Results & comparison"):
@@ -103,8 +108,8 @@ def test_configuration_apply_history_comparison_and_stale_evidence():
     app = AppTest.from_file(str(ROOT / "planner/cloud_app.py")).run(timeout=30)
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
     app.button(key="open_allocation").click().run()
-    app.button(key="run").click().run()
-    assert any("requires supplied" in e.value for e in app.error)
+    assert app.button(key="run").disabled
+    assert not app.session_state["runs"]
     app.button(key="prepare").click().run()
     app.button(key="run").click().run(timeout=30)
     first = app.session_state["runs"][0]
@@ -122,8 +127,8 @@ def test_configuration_apply_history_comparison_and_stale_evidence():
     app.button(key="nav_" + "Decision workspace").click().run()
     assert app.radio(key="mode").value == "Allocation planning"
     assert any("Earlier evidence" in w.value for w in app.warning)
-    app.button(key="run").click().run()
-    assert any("requires supplied" in e.value for e in app.error)
+    assert app.button(key="run").disabled
+    assert len(app.session_state["runs"]) == 1
     app.button(key="prepare").click().run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception and not app.error

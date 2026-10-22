@@ -65,8 +65,9 @@ def configure(scenario):
                     text = st.text_area("Scenario definition", scenario_json(base), height=350, key=f"json_{base_key}")
                     base = scenario_from_json(text)
                     base_key = fingerprint(base)[:10]
-        sid = st.text_input("Scenario name", base.scenario_id, key=f"name_{base_key}")
-        revision = st.number_input("Scenario version", min_value=1, value=base.version, key=f"version_{base_key}")
+        details, version = st.columns([3, 1])
+        sid = details.text_input("Scenario name", base.scenario_id, key=f"name_{base_key}")
+        revision = version.number_input("Scenario version", min_value=1, value=base.version, key=f"version_{base_key}")
         actor = st.text_input("Decision maker", base.decision_maker, key=f"actor_{base_key}")
         if not SYNTHETIC_CLOUD:
             with st.expander("Import or enter battery records"):
@@ -116,6 +117,8 @@ def configure(scenario):
                            co2_floor_kg=floor if floor_on else None)
         if fingerprint(candidate) != fingerprint(scenario):
             st.warning("Unapplied changes. Existing results still refer to the applied scenario.")
+        else:
+            st.caption("All settings match the applied scenario.")
         if st.button("Apply configuration", type="primary", key="apply"):
             st.session_state["scenario"] = candidate
             st.session_state["notice"] = "Configuration applied. Run a capability to assess this scenario."
@@ -125,6 +128,7 @@ def configure(scenario):
 
 
 def show_result(result):
+    st.subheader(mode_label(result["mode"]))
     st.caption(f"Run {result['run_id'][:8]} · Scenario version {result['scenario']['version']} · Status: {result['status']}")
     report = result["evaluation"]
     if report:
@@ -136,19 +140,27 @@ def show_result(result):
         allocation_chart(result)
     elif result["solver"]:
         st.error(f"No certified feasible allocation. Solver status: {result['status']}")
+    else:
+        st.success("Assessment complete. Review the battery–destination evidence below.")
+        for column, status in zip(st.columns(3), ("eligible", "ineligible", "undetermined")):
+            column.metric(status.title() + " options", sum(r["status"] == status for r in result["eligibility"]))
+        st.caption("Counts refer to battery–destination pairs, not unique batteries.")
     selected_asset = st.selectbox("Inspect a battery", ["All batteries"] + [b["asset_id"] for b in result["scenario"]["batteries"]], key=f"inspect_{result['run_id']}")
     def filtered(rows):
         return rows if selected_asset == "All batteries" else [r for r in rows if r.get("asset_id") == selected_asset]
-    tabs = st.tabs(["Admissibility", "Destination comparison", "Allocation details", "Traceability"])
-    with tabs[0]:
+    labels = (["Allocation details", "Admissibility", "Destination comparison", "Traceability"] if result["solver"] else
+              ["Destination comparison", "Admissibility", "Allocation details", "Traceability"] if result["mode"] == "destination" else
+              ["Admissibility", "Destination comparison", "Allocation details", "Traceability"])
+    tabs = dict(zip(labels, st.tabs(labels)))
+    with tabs["Admissibility"]:
         table(filtered(result["eligibility"]))
         evidence = {"schema_version": 1, "scenario_fingerprint": result["scenario_fingerprint"], "records": result["eligibility"]}
         st.download_button("Download eligibility evidence", json.dumps(evidence, indent=2), "eligibility.json", "application/json")
-    with tabs[1]:
+    with tabs["Destination comparison"]:
         st.caption("Preference among currently eligible destinations. Ties are retained; shared constraints and deferral enter the allocation model.")
         st.caption(f"Economic values: {result['scenario']['currency']} per pair assessment; avoided emissions: kg CO2e.")
         table(filtered(result["comparisons"]))
-    with tabs[2]:
+    with tabs["Allocation details"]:
         if result["allocation"]:
             table([{"destination": d["pathway_id"], "assigned_packs": report["details"]["pathway_counts"][d["pathway_id"]],
                     "capacity_use": report["pathway_use"][d["pathway_id"]], "capacity_limit": d["capacity"],
@@ -161,7 +173,7 @@ def show_result(result):
             st.caption("Assignment is an initial disposition decision. Delivered service, waiting duration, material recovery and credited supply are not calculated by Model 0.")
         else:
             st.info("This run has no allocation result.")
-    with tabs[3]:
+    with tabs["Traceability"]:
         st.write(result["scenario"]["source"])
         for assumption in result["scenario"]["assumptions"]:
             st.write("• " + assumption)
@@ -209,7 +221,7 @@ def allocation_chart(result):
     st.markdown('<div class="allocation-chart">' + ''.join(rows) + '</div>', unsafe_allow_html=True)
 
 
-def capability_cards():
+def capability_cards(compact=False):
     descriptions = [
         ("Battery admissibility", "Eligibility & evidence", "Check which destinations each battery can enter and identify unmet requirements."),
         ("Destination determination", "Options & preferences", "Compare eligible destinations using economic value or assessed avoided emissions."),
@@ -217,9 +229,9 @@ def capability_cards():
     ]
     for column, (name, label, description) in zip(st.columns(3), descriptions):
         with column, st.container(border=True, key=f"capability_{MODES[name]}"):
-            st.markdown('<div class="capability-copy">'
+            st.markdown(f'<div class="capability-copy{" compact" if compact else ""}">'
                         f'<div class="eyebrow">{html.escape(label.upper())}</div>'
-                        f'<h3>{html.escape(name)}</h3><p>{html.escape(description)}</p></div>', unsafe_allow_html=True)
+                        f'<h3>{html.escape(name)}</h3>' + ("" if compact else f'<p>{html.escape(description)}</p>') + '</div>', unsafe_allow_html=True)
             action = {"admission": "Assess eligibility", "destination": "Compare options", "allocation": "Plan allocation"}[MODES[name]]
             st.button(action, key=f"open_{MODES[name]}", on_click=go, args=("Decision workspace", name), width="stretch")
 
@@ -252,21 +264,18 @@ def overview(scenario):
 
 
 def dashboard(scenario):
-    st.write("Your battery portfolio, planning context and recent decisions.")
     columns = st.columns(4)
     for col, label, value in zip(columns, ["Battery packs", "Destinations", "Shared resources", "Session analyses"],
                                 [len(scenario.batteries), len(scenario.destinations), len(scenario.resources), len(st.session_state["runs"])]):
         col.metric(label, value)
-    st.subheader("Decision tools")
-    st.caption("Three connected capabilities. Start with your decision question; no fixed sequence is required.")
-    capability_cards()
     left, right = st.columns([1.3, 1])
     with left, st.container(border=True):
         st.subheader("Active planning context")
         st.write(f"**{scenario.scenario_id}** · Version {scenario.version}")
         st.write(scenario.decision_maker)
         st.caption(scenario.horizon)
-        table([{"destination": d.name, "capacity": d.capacity, "demand_limit_packs": scenario.demand_limits.get(d.pathway_id)} for d in scenario.destinations])
+        with st.expander("Destination capacity and demand"):
+            table([{"destination": d.name, "capacity": d.capacity, "demand_limit_packs": scenario.demand_limits.get(d.pathway_id)} for d in scenario.destinations])
         st.button("Configure scenario", on_click=go, args=("Configuration",), width="stretch")
     with right, st.container(border=True):
         st.subheader("Latest analysis")
@@ -286,6 +295,9 @@ def dashboard(scenario):
             st.write("Your workspace is ready for its first analysis.")
             st.caption("Start with any capability, or use an integrated analysis to assess eligibility and plan allocation together.")
             st.button("Start integrated analysis", type="primary", on_click=go, args=("Decision workspace", "Integrated decision"), width="stretch")
+    st.subheader("Decision tools")
+    st.caption("Use independently or together with the same scenario and shared evidence.")
+    capability_cards(compact=True)
     st.subheader("Recent activity")
     history = st.session_state["runs"]
     if history:
@@ -316,7 +328,6 @@ def mode_label(mode):
 
 
 def workspace(scenario):
-    st.caption(f"Active scenario: {scenario.scenario_id} · Version {scenario.version} · {len(scenario.batteries)} packs")
     st.write("Choose the question you need to answer. Every capability uses the same applied scenario.")
     mode = MODES[st.radio("Decision question", list(MODES), index=3, key="mode", horizontal=True, persist_state="session")]
     descriptions = {
@@ -352,7 +363,9 @@ def workspace(scenario):
                 st.warning("Prepare matching eligibility evidence, or run Battery admissibility first. Earlier evidence cannot be reused after scenario changes.")
         actions = {"admission": "Assess battery eligibility", "destination": "Compare destination options",
                    "allocation": "Create allocation plan", "integrated": "Assess and create plan"}
-        if st.button(actions[mode], type="primary", key="run"):
+        if mode != "allocation" or evidence is not None:
+            st.caption("Ready to run with the applied scenario.")
+        if st.button(actions[mode], type="primary", key="run", disabled=mode == "allocation" and evidence is None):
             try:
                 with st.spinner("Evaluating the decision…"):
                     result = run(scenario, mode, supplied_eligibility=evidence, criterion=criterion, unknown_policy=unknown)
@@ -486,21 +499,21 @@ with st.sidebar:
                       type="primary" if st.session_state["page"] == destination else "secondary",
                       on_click=go, args=(destination,))
     st.divider()
-    st.caption("PLANNING CONTEXT")
+    st.caption("Synthetic cloud workspace · Session-only results" if SYNTHETIC_CLOUD else "Local planning workspace")
+
+with st.expander("Scenario controls", expanded=False):
     example = st.selectbox("Starting scenario", ["Synthetic 60-pack fleet", "Two-pack capacity example"], key="example")
     st.caption("Changing the example replaces inputs; completed runs stay in this session.")
     if st.session_state.get("loaded_example") != example:
         st.session_state["scenario"] = (synthetic_scenario() if example == "Synthetic 60-pack fleet" else scenario_from_json((ROOT / "configs/dss/scarcity.json").read_text(encoding="utf-8")))
         st.session_state["loaded_example"] = example
     scenario = st.session_state["scenario"]
-    st.markdown(f'<div class="scenario-badge">ACTIVE SCENARIO<strong>{html.escape(scenario.scenario_id)}</strong><span>Version {scenario.version} · {len(scenario.batteries)} packs</span></div>', unsafe_allow_html=True)
     st.download_button("Download current scenario", scenario_json(scenario), "scenario.json", "application/json", width="stretch")
-    st.caption("Synthetic cloud workspace" if SYNTHETIC_CLOUD else "Local planning workspace")
 
 page = st.session_state["page"]
 heading, action = st.columns([4, 1])
 with heading:
-    st.markdown('<div class="workspace-bar">DISPOSITION DSS <span>/ WORKSPACE</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="workspace-bar">ACTIVE SCENARIO <span>' + html.escape(scenario.scenario_id) + f' · v{scenario.version} · {len(scenario.batteries)} packs</span></div>', unsafe_allow_html=True)
 with action:
     st.button("New analysis", icon=":material/add:", on_click=go, args=("Decision workspace",), width="stretch")
 st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
