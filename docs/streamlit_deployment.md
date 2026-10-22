@@ -4,6 +4,15 @@ Prepared 2026-10-22 for personal viewing using synthetic examples and downloads.
 
 Live app: https://dsseolmode-6gvxep8xkwn6u6wosdwgwd.streamlit.app/
 
+The redesigned application provides Dashboard, Decision workspace, Configuration,
+Results & comparison, and Model & assumptions pages. See the
+[application walkthrough](modular_dss.md#application-walkthrough). Configuration
+changes require **Apply configuration**; completed session analyses can be
+compared and downloaded together. The redesign passed 88 local regression tests
+on 2026-10-22, including scenario persistence, eligibility handoff, stale-evidence
+rejection and incompatible-comparison handling. The `dss/` and `level0/` model
+implementations are unchanged.
+
 ## Deployment verification (2026-10-22)
 
 - Deployed from commit `ff2c7b1` on `streamlit-private`, Python 3.11.
@@ -37,6 +46,80 @@ It offers the 60-pack fleet and the two-pack capacity example, all four executio
 modes, capacity/entry-rule experiments, and downloads of scenario, eligibility
 and complete result JSON. Input uploads, manual battery entry, and SQLite history
 are disabled for this deployment. Local `planner/app.py` retains those features.
+
+## Update the live app from PyCharm
+
+Workflow: **edit locally → test → commit → push → verify online**.
+Saving a file or making a local commit does not update the live app. Streamlit
+updates it when changes reach the deployed GitHub branch, `streamlit-private`.
+Pushing only to `main` or another branch does not update this deployment.
+
+1. **Open the project and check the branch.** In PyCharm, open
+   `C:\Research\Codebase\DSS_prototype`. Select `.venv\Scripts\python.exe`
+   as the interpreter and confirm the branch selector shows `streamlit-private`.
+   For larger experiments, use a separate development branch, then merge the
+   tested changes into `streamlit-private` when ready to publish.
+2. **Edit and save the intended files.** The shared interface is
+   `planner/app.py`; `planner/cloud_app.py` enables its synthetic-only cloud
+   mode. Model and capability changes belong in the appropriate `dss/` or
+   `level0/` modules. Add or update tests when changing model behaviour.
+3. **Test the cloud version locally.** From PyCharm's terminal in the project
+   folder, run:
+
+   ```powershell
+   .\.venv\Scripts\python.exe -m streamlit run planner/cloud_app.py --server.address 127.0.0.1
+   ```
+
+   Open the local URL printed in the terminal. Exercise the changed capability,
+   run a synthetic example, and download its complete result. Stop the local
+   server with `Ctrl+C`, or use another terminal for the next step.
+4. **Run the tests before publishing.**
+
+   ```powershell
+   .\.venv\Scripts\python.exe -m pytest tests -q
+   ```
+
+   Resolve failures before pushing. If dependencies changed, install and test
+   those versions locally as described below.
+5. **Commit and push from PyCharm.** Open the Commit panel, select only the
+   intended source, tests, and documentation files, review the diff, and enter
+   a descriptive message. Choose **Commit and Push**, or commit first and then
+   use **Git → Push**. Confirm the destination is `origin/streamlit-private`
+   in `DorisFangWork/DSS_EOL_Model`. Keep secrets, research data, `.idea/`,
+   virtual environments, and generated results out of the commit.
+6. **Verify the live update.** Wait for Streamlit to finish updating, then open
+   the live app linked above. Check the changed behaviour, run the relevant
+   synthetic scenario, and save a result download. Ordinary code updates retain
+   the existing private sharing settings; keep Sharing set to **Only specific
+   people can view this app**, with no additional viewers.
+
+### When dependencies change
+
+Add or change pinned Python packages in `planner/requirements.txt`, the dependency
+file used by this deployment. Installing a package only in PyCharm's local
+environment does not install it in the cloud. Test the updated requirements
+locally before committing and pushing them:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r planner/requirements.txt
+```
+
+Streamlit automatically rebuilds the environment when dependencies change, which
+takes longer than an ordinary source update. Keep dependencies compatible with
+the deployed Python 3.11 runtime.
+
+### If the live app does not update or fails
+
+- Confirm the push succeeded and the new commit is visible on GitHub's
+  `streamlit-private` branch.
+- Open **Manage app** on the live site to inspect build and runtime logs.
+- Fix the reported problem locally, test, then commit and push the correction.
+- If the build succeeded but the app remains stale, refresh the browser; use
+  **Manage app → Reboot app** if needed. Download any results you want to retain
+  before a reboot, which resets active sessions.
+
+Streamlit documents automatic source updates and dependency rebuilds in
+[Update your app](https://docs.streamlit.io/deploy/streamlit-community-cloud/manage-your-app#update-your-app).
 
 ## Account and privacy checks
 

@@ -21,6 +21,9 @@ planner = ["streamlit==1.66.0"]
 [tool.setuptools]
 packages = ["dss", "level0", "planner"]
 
+[tool.setuptools.package-data]
+planner = ["styles.css"]
+
 [tool.pytest.ini_options]
 addopts = "-ra"
 testpaths = ["tests"]

@@ -43,6 +43,57 @@ directly. Joint destination/quantity selection happens inside Model 0; advisory
 rankings are not an optimiser input. No callback cycle or mandatory three-stage
 pipeline is needed to express this interaction.
 
+## Application walkthrough
+
+The web application is a product prototype for industry decision support. The
+PhD research programme can contribute validated capabilities; research levels
+are not the application's navigation structure.
+
+| Page | Purpose |
+| --- | --- |
+| Dashboard | Active scenario, fleet counts, decision tools and latest-analysis status |
+| Decision workspace | Run admissibility, destination determination, allocation planning or an integrated analysis |
+| Configuration | Edit scenario details, entry rules, demand and capacity; explicitly apply changes |
+| Results & comparison | Inspect completed snapshots, filter battery evidence, compare baseline and alternative, download results |
+| Model & assumptions | Inspect model scope, valuation inputs, assumptions and implementation provenance |
+
+Choose a starting example in the sidebar. Changing the example replaces the
+applied configuration but preserves completed session runs. Configuration edits
+are drafts until **Apply configuration**; leaving that page discards unapplied
+edits. The sidebar download always contains the applied scenario.
+
+Capabilities share the applied scenario and retain their independent service
+interfaces. An admissibility run prepares evidence that allocation planning can
+reuse. Allocation planning can also prepare evidence through a separate admission
+call, or load supplied evidence locally. Changing the scenario invalidates old
+evidence. Integrated execution assesses rules and jointly allocates the fleet;
+destination rankings remain advisory. The user-facing allocation function is
+called **Allocation planning**; Model 0 is identified in model details.
+
+### Try a capacity comparison
+
+1. Select **Two-pack capacity example**. In **Decision workspace**, choose
+   **Integrated decision** and click **Run selected capability**. The baseline
+   objective is 17.00.
+2. Open **Configuration**. Under destination requirements, change the repurpose
+   capacity from 1 to 2 and click **Apply configuration**.
+3. Return to the workspace and run the same analysis. The alternative objective
+   is 18.00.
+4. Open **Results & comparison → Compare scenarios**. Select the first run as
+   baseline and the second as alternative. Review the +1.00 economic difference,
+   changed configuration and battery assignments, then download the comparison.
+
+Comparison downloads contain both full run snapshots and their descriptive
+differences. Numeric differences require evaluated allocations with matching
+currency, horizon and period count. Changed populations and analysis settings
+are disclosed; these differences do not establish causal coordination gains.
+
+Results retain their original scenarios. A historical-snapshot warning appears
+when the selected result differs from the active scenario or current model code.
+Infeasible runs are shown without a certified allocation. Cloud runs are kept
+only in the current session; download them before closing or restarting. The
+local entrypoint additionally retains its existing SQLite save/history workflow.
+
 ## Shared contract
 
 `PlanningScenario` declares the actor, controllable actions, objective, horizon,

@@ -1,8 +1,9 @@
 # DSS_EOL — DSS prototype
 
-This repository supports two interconnected targets under the service–recovery
-motivation: a working EV battery disposition DSS informed by the SLR, and a
-focused PhD investigation likely within flow allocation.
+This repository supports an industry-oriented EV battery disposition DSS intended
+for future practical use and commercialisation, alongside a separate PhD research
+programme under the service–recovery motivation. Validated research can strengthen
+the DSS's modular capabilities.
 
 The DSS has three independently callable, interacting capabilities:
 
@@ -32,6 +33,10 @@ If the UI dependency is missing, install the optional dependency using
 `python -m pip install -e ".[planner]"` in the Python 3.11 environment.
 
 Choose the existing synthetic 60-pack scenario or the two-pack capacity example.
+The application has Dashboard, Decision workspace, Configuration, Results &
+comparison, and Model & assumptions pages. Configuration edits take effect only
+after **Apply configuration**. Completed runs retain their snapshots for
+baseline-versus-alternative comparisons and downloads within the session.
 Use any individual capability or Integrated decision. Scenario JSON supports
 complete custom assessments; CSV/manual entry supports battery observations.
 Imported packs use synthetic valuation formulas only when explicitly selected.
@@ -48,6 +53,11 @@ For personal online viewing, deploy `planner/cloud_app.py` with Python 3.11 and
 and disables data uploads and server-side history. App access must separately be
 set to private in Streamlit Community Cloud. See the
 [private deployment instructions](docs/streamlit_deployment.md).
+See [the application walkthrough](docs/modular_dss.md#application-walkthrough) for
+navigation, capability interactions, and a two-pack comparison exercise.
+
+For later changes, follow [Update the live app from PyCharm](docs/streamlit_deployment.md#update-the-live-app-from-pycharm):
+edit, test, commit, push to `streamlit-private`, then verify online.
 
 ## Level 0 quick start
 
