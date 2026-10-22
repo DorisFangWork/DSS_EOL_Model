@@ -2,6 +2,24 @@
 
 Prepared 2026-10-22 for personal viewing using synthetic examples and downloads.
 
+Live app: https://dsseolmode-6gvxep8xkwn6u6wosdwgwd.streamlit.app/
+
+## Deployment verification (2026-10-22)
+
+- Deployed from commit `ff2c7b1` on `streamlit-private`, Python 3.11.
+- Sharing reads **Only specific people can view this app**, with no invited
+  viewers; the private GitHub repository has zero collaborators.
+- A signed-out browser was denied access and prompted to sign in. Owner access
+  was restored successfully afterward.
+- Live 60-pack integrated solve: Optimal; economic value SGD 89,082.37 and
+  avoided emissions 159,286.55 kg CO2e; 25 repurposed, 35 recycled, no deferrals.
+- Live two-pack integrated solve: Optimal; economic value 17.00.
+- Downloaded and inspected `dss_run.json`: 60 battery records, feasible allocation,
+  no violations, full scenario and pinned implementation versions. The hosting
+  frame prevented automated download capture; capture succeeded from its direct
+  app view. A verification copy is in `results/deployment/cloud_60pack_run.json`.
+- Local privacy screenshots are in ignored `results/deployment/`.
+
 ## Deployment settings
 
 | Setting | Value |
@@ -43,8 +61,8 @@ are required before describing this deployment as complete.
 ## Retaining results
 
 Preparation checks on 2026-10-22: 86 local tests passed; pinned Linux/Python 3.11
-dependencies resolved successfully. GitHub shows a private repository with no
-collaborators. Cloud execution and sharing must also be verified after deployment.
+dependencies resolved successfully. Cloud execution, sharing, signed-out denial,
+and a saved result file were subsequently verified as recorded above.
 
 Download results before closing or restarting the session. Cloud local storage
 is not a durable results archive. No research data, secrets, local database,
