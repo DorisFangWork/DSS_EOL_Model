@@ -45,7 +45,7 @@ def table(rows):
             value = f"{value:,.4f}".rstrip("0").rstrip(".")
         return html.escape(str(value))
     header = "".join(f"<th>{cell(k.replace('_', ' '))}</th>" for k in keys)
-    body = "".join("<tr>" + "".join(f"<td>{cell(row.get(k))}</td>" for k in keys) + "</tr>" for row in rows[:300])
+    body = "".join("<tr>" + "".join(f'<td class="{"numeric" if isinstance(row.get(k), (int, float)) and not isinstance(row.get(k), bool) else ""}">{cell(row.get(k))}</td>' for k in keys) + "</tr>" for row in rows[:300])
     st.markdown(f'<div class="dss-scroll"><table class="dss-table"><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table></div>', unsafe_allow_html=True)
     if len(rows) > 300:
         st.caption(f"Showing 300 of {len(rows)} rows; the run download contains every record.")
@@ -129,6 +129,7 @@ def configure(scenario):
 
 def show_result(result):
     st.subheader(mode_label(result["mode"]))
+    st.markdown(f'<span class="result-status">{html.escape(result["status"].title())}</span>', unsafe_allow_html=True)
     st.caption(f"Run {result['run_id'][:8]} · Scenario version {result['scenario']['version']} · Status: {result['status']}")
     report = result["evaluation"]
     if report:
@@ -229,8 +230,9 @@ def capability_cards(compact=False):
     ]
     for column, (name, label, description) in zip(st.columns(3), descriptions):
         with column, st.container(border=True, key=f"capability_{MODES[name]}"):
+            symbol = {"admission": "✓", "destination": "⇄", "allocation": "▥"}[MODES[name]]
             st.markdown(f'<div class="capability-copy{" compact" if compact else ""}">'
-                        f'<div class="eyebrow">{html.escape(label.upper())}</div>'
+                        f'<div class="eyebrow"><span class="capability-icon" aria-hidden="true">{symbol}</span>{html.escape(label)}</div>'
                         f'<h3>{html.escape(name)}</h3>' + ("" if compact else f'<p>{html.escape(description)}</p>') + '</div>', unsafe_allow_html=True)
             action = {"admission": "Assess eligibility", "destination": "Compare options", "allocation": "Plan allocation"}[MODES[name]]
             st.button(action, key=f"open_{MODES[name]}", on_click=go, args=("Decision workspace", name), width="stretch")
@@ -269,7 +271,7 @@ def dashboard(scenario):
                                 [len(scenario.batteries), len(scenario.destinations), len(scenario.resources), len(st.session_state["runs"])]):
         col.metric(label, value)
     left, right = st.columns([1.3, 1])
-    with left, st.container(border=True):
+    with left, st.container(border=True, key="context_card"):
         st.subheader("Active planning context")
         st.write(f"**{scenario.scenario_id}** · Version {scenario.version}")
         st.write(scenario.decision_maker)
@@ -277,7 +279,7 @@ def dashboard(scenario):
         with st.expander("Destination capacity and demand"):
             table([{"destination": d.name, "capacity": d.capacity, "demand_limit_packs": scenario.demand_limits.get(d.pathway_id)} for d in scenario.destinations])
         st.button("Configure scenario", on_click=go, args=("Configuration",), width="stretch")
-    with right, st.container(border=True):
+    with right, st.container(border=True, key="latest_card"):
         st.subheader("Latest analysis")
         history = st.session_state["runs"]
         if history:
@@ -336,7 +338,7 @@ def workspace(scenario):
         "allocation": "Use eligibility evidence to find the economically optimal fleet allocation under shared limits.",
         "integrated": "Assess eligibility and jointly allocate the fleet. Destination rankings explain options without constraining the optimiser.",
     }
-    with st.container(border=True):
+    with st.container(border=True, key="decision_card"):
         st.subheader(mode_label(mode))
         st.write(descriptions[mode])
         criterion = st.session_state.get("criterion", "economic_value")
