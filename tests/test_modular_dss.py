@@ -254,7 +254,9 @@ def test_planner_independent_integrated_stale_and_infeasible():
     app.button(key="nav_" + "Decision workspace").click().run()
     app.radio(key="mode").set_value("Battery admissibility").run()
     app.button(key="run").click().run()
-    assert not app.exception and not app.metric
+    assert not app.exception
+    assert [(m.label, m.value) for m in app.metric] == [
+        ("Eligible options", "4"), ("Ineligible options", "0"), ("Undetermined options", "0")]
     app.button(key="nav_" + "Decision workspace").click().run()
     app.radio(key="mode").set_value("Allocation planning").run()
     app.button(key="run").click().run(timeout=30)
