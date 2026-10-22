@@ -213,7 +213,7 @@ def allocation_chart(result):
     counts = dict(report["details"]["pathway_counts"])
     counts["Deferred"] = report["details"]["deferred_count"]
     total = len(result["scenario"]["batteries"])
-    colours = ["#167c80", "#5378b7", "#b58a39"]
+    colours = ["#588157", "#a3b18a", "#e9e2d3"]
     rows = []
     for i, (name, count) in enumerate(counts.items()):
         rows.append(f'<div class="allocation-row"><span>{html.escape(name.replace("_", " ").title())}</span>'
