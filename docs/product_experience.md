@@ -4,14 +4,14 @@ The product proposition is: turn battery information and operational constraints
 
 ## Navigation
 
-- Overview introduces the planning problem, the three capabilities and a potential industry pilot.
-- Dashboard shows the active scenario and latest analysis.
+- Dashboard is the default entry page, showing portfolio metrics, decision tools, the active scenario, latest analysis, recent activity and an expandable battery inventory.
+- About the DSS contains the product introduction and pilot guidance as secondary information.
 - Decision workspace supports independent eligibility assessment, destination comparison, allocation planning and an integrated analysis.
 - Configuration applies shared operational inputs; previous results retain their input snapshots.
 - Results & comparison explains recommendations and exports complete run and comparison records.
 - Model & assumptions explains scope, source-example notes, assessment values and provenance.
 
-The planning-context panel holds the scenario selector and download. Source-example notes describe the original baseline; the applied configuration and saved snapshots define each actual run.
+Icon-labelled sidebar buttons provide application navigation. The compact workspace header provides a New analysis action. The planning-context panel holds the scenario selector and download. Source-example notes describe the original baseline; the applied configuration and saved snapshots define each actual run.
 
 ## Industry positioning
 
@@ -23,4 +23,4 @@ The current private cloud preview uses synthetic inputs and session-only history
 
 ## Visual direction
 
-The navy-and-white palette, generous spacing, strong headings and horizontal navigation borrow the visual language of the Wix Business Consulting Company template (2852). The implementation retains Streamlit, uses original product copy and code-native visual treatment, and does not copy Wix assets or introduce a Wix dependency.
+The application structure follows Streamlit's management-interface pattern: persistent navigation, a compact header and a task-focused main workspace. The navy-and-white palette and typography borrow the visual language of the Wix Business Consulting Company template (2852). The implementation retains Streamlit, uses original product copy and code-native visual treatment, and does not copy Wix assets or introduce a Wix dependency.

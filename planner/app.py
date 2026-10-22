@@ -23,7 +23,7 @@ STORE_PATH = ROOT / "results" / "dss" / "runs.sqlite"
 SYNTHETIC_CLOUD = globals().get("SYNTHETIC_CLOUD", False)
 MODES = {"Battery admissibility": "admission", "Destination determination": "destination",
          "Allocation planning": "allocation", "Integrated decision": "integrated"}
-PAGES = ["Overview", "Dashboard", "Decision workspace", "Configuration", "Results & comparison", "Model & assumptions"]
+PAGES = ["Dashboard", "Decision workspace", "Configuration", "Results & comparison", "Model & assumptions", "Overview"]
 
 st.set_page_config(page_title="Battery disposition DSS", page_icon="🔋", layout="wide")
 st.markdown('<style>' + (Path(__file__).with_name("styles.css")).read_text(encoding="utf-8") + '</style>', unsafe_allow_html=True)
@@ -246,13 +246,12 @@ def overview(scenario):
 
 
 def dashboard(scenario):
-    st.markdown('<div class="hero"><div class="eyebrow">BATTERY DISPOSITION · DECISION SUPPORT</div>'
-                '<h2>Your planning overview.</h2><p>Review the active scenario, open a decision and track completed analyses.</p></div>', unsafe_allow_html=True)
+    st.write("Your battery portfolio, planning context and recent decisions.")
     columns = st.columns(4)
     for col, label, value in zip(columns, ["Battery packs", "Destinations", "Shared resources", "Session analyses"],
                                 [len(scenario.batteries), len(scenario.destinations), len(scenario.resources), len(st.session_state["runs"])]):
         col.metric(label, value)
-    st.subheader("Your decision tools")
+    st.subheader("Decision tools")
     st.caption("Three connected capabilities. Start with your decision question; no fixed sequence is required.")
     capability_cards()
     left, right = st.columns([1.3, 1])
@@ -281,6 +280,17 @@ def dashboard(scenario):
             st.write("Your workspace is ready for its first analysis.")
             st.caption("Start with any capability, or use an integrated analysis to assess eligibility and plan allocation together.")
             st.button("Start integrated analysis", type="primary", on_click=go, args=("Decision workspace", "Integrated decision"), width="stretch")
+    st.subheader("Recent activity")
+    history = st.session_state["runs"]
+    if history:
+        table([{"scenario": r["scenario"]["scenario_id"], "capability": mode_label(r["mode"]),
+                "status": r["status"], "run": r["run_id"][:8],
+                "planning_basis": "Current" if current_basis(r, scenario) else "Historical"}
+               for r in reversed(history[-10:])])
+    else:
+        st.caption("Completed assessments and allocation plans will appear here.")
+    with st.expander(f"Battery inventory · {len(scenario.batteries)} packs"):
+        table(plain(scenario.batteries))
 
 
 def mode_label(mode):
@@ -436,11 +446,21 @@ def assumptions(scenario):
 if "next_page" in st.session_state:
     st.session_state["page"] = st.session_state.pop("next_page")
 st.session_state.setdefault("runs", [])
+st.session_state.setdefault("page", "Dashboard")
 with st.sidebar:
     st.markdown('<div class="brand"><span class="brand-mark">D</span><div>DISPOSITION DSS<small>EV BATTERY DECISION SUPPORT</small></div></div>', unsafe_allow_html=True)
+    st.caption("WORKSPACE")
+    icons = [":material/dashboard:", ":material/hub:", ":material/tune:", ":material/compare_arrows:", ":material/description:", ":material/info:"]
+    with st.container(key="navigation"):
+        for destination, icon in zip(PAGES, icons):
+            st.button("About the DSS" if destination == "Overview" else destination,
+                      icon=icon, key=f"nav_{destination}", width="stretch",
+                      type="primary" if st.session_state["page"] == destination else "secondary",
+                      on_click=go, args=(destination,))
+    st.divider()
     st.caption("PLANNING CONTEXT")
     example = st.selectbox("Starting scenario", ["Synthetic 60-pack fleet", "Two-pack capacity example"], key="example")
-    st.caption("Switching examples replaces the applied configuration. Completed runs remain available for comparison.")
+    st.caption("Changing the example replaces inputs; completed runs stay in this session.")
     if st.session_state.get("loaded_example") != example:
         st.session_state["scenario"] = (synthetic_scenario() if example == "Synthetic 60-pack fleet" else scenario_from_json((ROOT / "configs/dss/scarcity.json").read_text(encoding="utf-8")))
         st.session_state["loaded_example"] = example
@@ -449,12 +469,14 @@ with st.sidebar:
     st.download_button("Download current scenario", scenario_json(scenario), "scenario.json", "application/json", width="stretch")
     st.caption("Synthetic cloud workspace" if SYNTHETIC_CLOUD else "Local planning workspace")
 
-st.markdown('<div class="app-masthead"><strong>DISPOSITION DSS</strong><span>BATTERY LIFECYCLE DECISION SUPPORT</span></div>', unsafe_allow_html=True)
-st.radio("Workspace navigation", PAGES, key="page", horizontal=True, label_visibility="collapsed")
 page = st.session_state["page"]
-st.markdown('<div class="eyebrow">DISPOSITION PLANNING / ' + html.escape(page.upper()) + '</div>', unsafe_allow_html=True)
-if page != "Overview":
-    st.title(page)
+heading, action = st.columns([4, 1])
+with heading:
+    st.markdown('<div class="workspace-bar">DISPOSITION DSS <span>/ WORKSPACE</span></div>', unsafe_allow_html=True)
+with action:
+    st.button("New analysis", icon=":material/add:", on_click=go, args=("Decision workspace",), width="stretch")
+st.divider()
+st.title("About the DSS" if page == "Overview" else page)
 if SYNTHETIC_CLOUD:
     st.caption("Synthetic examples · Session-only results · Download snapshots to retain your work")
 if "notice" in st.session_state:

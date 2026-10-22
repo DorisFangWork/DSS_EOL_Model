@@ -247,23 +247,23 @@ def test_planner_independent_integrated_stale_and_infeasible():
     app = AppTest.from_file(str(ROOT / "planner/app.py")).run(timeout=30)
     assert not app.exception
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
-    app.radio(key="page").set_value("Decision workspace").run()
+    app.button(key="nav_" + "Decision workspace").click().run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception
     assert app.metric[0].value == "17.00"
-    app.radio(key="page").set_value("Decision workspace").run()
+    app.button(key="nav_" + "Decision workspace").click().run()
     app.radio(key="mode").set_value("Battery admissibility").run()
     app.button(key="run").click().run()
     assert not app.exception and not app.metric
-    app.radio(key="page").set_value("Decision workspace").run()
+    app.button(key="nav_" + "Decision workspace").click().run()
     app.radio(key="mode").set_value("Allocation planning").run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception and app.metric[0].value == "17.00"
-    app.radio(key="page").set_value("Configuration").run()
+    app.button(key="nav_" + "Configuration").click().run()
     next(c for c in app.checkbox if c.label == "Require minimum avoided emissions").check().run()
     next(n for n in app.number_input if n.label == "Avoided emissions floor (kg CO2e)").set_value(100.0).run()
     app.button(key="apply").click().run()
-    app.radio(key="page").set_value("Decision workspace").run()
+    app.button(key="nav_" + "Decision workspace").click().run()
     app.radio(key="mode").set_value("Integrated decision").run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception

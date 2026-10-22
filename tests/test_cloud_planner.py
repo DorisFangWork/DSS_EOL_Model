@@ -9,18 +9,21 @@ def test_product_overview_navigation_and_action_labels():
     pytest.importorskip("streamlit")
     from streamlit.testing.v1 import AppTest
     app = AppTest.from_file(str(ROOT / "planner/cloud_app.py")).run(timeout=30)
-    assert app.radio(key="page").value == "Overview"
+    assert app.session_state["page"] == "Dashboard"
+    assert not any(r.key == "page" for r in app.radio)
+    assert len([b for b in app.button if b.key and b.key.startswith("nav_")]) == 6
+    app.button(key="nav_Overview").click().run()
     next(b for b in app.button if b.label == "Open planning dashboard").click().run()
-    assert app.radio(key="page").value == "Dashboard"
+    assert app.session_state["page"] == "Dashboard"
     for mode, action in [("admission", "Assess battery eligibility"),
                          ("destination", "Compare destination options"),
                          ("allocation", "Create allocation plan")]:
-        app.radio(key="page").set_value("Overview").run()
+        app.button(key="nav_" + "Overview").click().run()
         app.button(key=f"open_{mode}").click().run()
-        assert app.radio(key="page").value == "Decision workspace"
+        assert app.session_state["page"] == "Decision workspace"
         assert app.button(key="run").label == action
         assert not app.exception
-    app.radio(key="page").set_value("Model & assumptions").run()
+    app.button(key="nav_" + "Model & assumptions").click().run()
     assert any("original example" in c.value for c in app.caption)
 
 
@@ -37,8 +40,8 @@ def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
     assert len(app.get("file_uploader")) == 0
     assert len(app.text_area) == 0
     assert any("Synthetic examples" in item.value for item in app.caption)
-    assert app.radio(key="page").value == "Overview"
-    app.radio(key="page").set_value("Decision workspace").run()
+    assert app.session_state["page"] == "Dashboard"
+    app.button(key="nav_" + "Decision workspace").click().run()
     app.button(key="run").click().run(timeout=30)
     assert not app.exception
     assert app.metric[0].value == "89,082.37"
@@ -47,18 +50,18 @@ def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
         "Download current scenario", "Download eligibility evidence", "Download complete run"}
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
     for mode in ("Battery admissibility", "Destination determination", "Allocation planning", "Integrated decision"):
-        app.radio(key="page").set_value("Decision workspace").run()
+        app.button(key="nav_" + "Decision workspace").click().run()
         app.radio(key="mode").set_value(mode).run()
         if mode == "Allocation planning":
             assert len(app.get("file_uploader")) == 0
             app.button(key="prepare").click().run()
         app.button(key="run").click().run(timeout=30)
         assert not app.exception and not app.error
-        assert app.radio(key="page").value == "Results & comparison"
+        assert app.session_state["page"] == "Results & comparison"
         if mode in ("Allocation planning", "Integrated decision"):
             assert app.metric[0].value == "17.00"
     for page in ("Overview", "Dashboard", "Configuration", "Model & assumptions", "Results & comparison"):
-        app.radio(key="page").set_value(page).run()
+        app.button(key="nav_" + page).click().run()
         assert not app.exception and not app.error
         assert len(app.get("file_uploader")) == 0
         assert len(app.text_area) == 0
@@ -76,17 +79,17 @@ def test_configuration_apply_history_comparison_and_stale_evidence():
     app.button(key="run").click().run(timeout=30)
     first = app.session_state["runs"][0]
     assert first["evaluation"]["economic_objective"] == 17
-    app.radio(key="page").set_value("Configuration").run()
+    app.button(key="nav_" + "Configuration").click().run()
     capacity = next(n for n in app.number_input if n.key.startswith("cap_") and n.key.endswith("_repurpose"))
     capacity.set_value(2.0).run()
     assert app.session_state["scenario"].destinations[0].capacity == 1
     assert any("Unapplied changes" in w.value for w in app.warning)
     app.button(key="apply").click().run()
     assert app.session_state["scenario"].destinations[0].capacity == 2
-    app.radio(key="page").set_value("Results & comparison").run()
+    app.button(key="nav_" + "Results & comparison").click().run()
     assert any("historical snapshot" in w.value for w in app.warning)
     assert app.session_state["runs"][0] == first
-    app.radio(key="page").set_value("Decision workspace").run()
+    app.button(key="nav_" + "Decision workspace").click().run()
     assert app.radio(key="mode").value == "Allocation planning"
     assert any("Earlier evidence" in w.value for w in app.warning)
     app.button(key="run").click().run()
@@ -98,10 +101,10 @@ def test_configuration_apply_history_comparison_and_stale_evidence():
     assert any(m.delta == "+1.00" for m in app.metric)
     assert any(b.label == "Download comparison and snapshots" for b in app.get("download_button"))
     baseline = app.selectbox(key="baseline_run").value
-    app.radio(key="page").set_value("Dashboard").run()
-    app.radio(key="page").set_value("Results & comparison").run()
+    app.button(key="nav_" + "Dashboard").click().run()
+    app.button(key="nav_" + "Results & comparison").click().run()
     assert app.selectbox(key="baseline_run").value == baseline
-    app.radio(key="page").set_value("Configuration").run()
+    app.button(key="nav_" + "Configuration").click().run()
     assert next(n for n in app.number_input if n.key.startswith("cap_") and n.key.endswith("_repurpose")).value == 2
 
 
@@ -113,14 +116,14 @@ def test_admission_handoff_and_incompatible_comparison():
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
     app.button(key="open_admission").click().run()
     app.button(key="run").click().run()
-    app.radio(key="page").set_value("Decision workspace").run()
+    app.button(key="nav_" + "Decision workspace").click().run()
     app.radio(key="mode").set_value("Allocation planning").run()
     assert any("evidence matches" in s.value for s in app.success)
     app.button(key="run").click().run()
     assert app.session_state["runs"][-1]["evaluation"]["economic_objective"] == 17
     # A different horizon must not produce numeric comparison deltas.
     app.session_state["scenario"] = replace(app.session_state["scenario"], horizon="Different evaluation window")
-    app.radio(key="page").set_value("Decision workspace").run()
+    app.button(key="nav_" + "Decision workspace").click().run()
     app.radio(key="mode").set_value("Integrated decision").run()
     app.button(key="run").click().run()
     history = app.session_state["runs"]
