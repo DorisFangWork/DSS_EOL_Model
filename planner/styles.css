@@ -141,8 +141,8 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 [data-testid="stMain"] [data-testid="stCaptionContainer"] p,
 [data-testid="stMain"] [data-testid="stMetricLabel"] p { color:#52604f; }
 [data-testid="stMain"] button[kind="primary"] { color:#fff; }
-[data-testid="stMain"] button[kind="secondary"] { color:#344e41; }
-[data-testid="stMain"] button[kind="secondary"]:hover:not(:disabled) { background:#faf7f2; border-color:#a3b18a; }
+[data-testid="stMain"] button[kind="secondary"] { background:#fff; border-color:#dfe4e1; color:#27332e; }
+[data-testid="stMain"] button[kind="secondary"]:hover:not(:disabled) { background:#f2f6f3; border-color:#344e41; }
 @media (max-width:700px) {
   .block-container { padding:3.5rem 1rem 2rem; }
   .hero { padding:1.2rem; }
@@ -159,15 +159,15 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 .st-key-scenario_selector [data-testid="stWidgetLabel"] { flex:none; margin:0; padding:0; }
 .st-key-scenario_selector :is([data-baseweb="select"], .react-aria-ComboBox) { flex:1; min-width:0; }
 .st-key-scenario_selector [data-testid="stTooltipIcon"] { margin-left:.35rem; }
-/* Warm ivory chooses a tool; primary green executes; white actions support. */
+/* Forest outlines choose a tool; solid forest executes; neutral outlines support. */
 [data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"] {
-  background:#faf7f2; border:1px solid #a3b18a; color:#344e41;
+  background:#fff; border:1px solid #344e41; color:#344e41;
   font-weight:600; transition:background-color .15s, border-color .15s;
 }
 [data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"] p { font-weight:600; }
 [data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]::after { content:" →"; margin-left:.4rem; }
 [data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"]:hover:not(:disabled) {
-  background:#e9e2d3; border-color:#a3b18a;
+  background:#f2f6f3; border-color:#344e41;
 }
 [data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]:focus-visible {
   outline:3px solid #588157; outline-offset:3px;
@@ -183,3 +183,32 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 .eyebrow, .question-label { font-weight:500; }
 [data-testid="stMain"] [data-testid="stMetric"] { border-color:transparent; background:#fcfcfa; }
 [data-testid="stMain"] [data-testid="stWidgetLabel"] p { font-weight:400; }
+
+/* Main-page surfaces only: the sidebar retains its established palette. */
+[data-testid="stMain"] { --dss-line:#dfe4e1; }
+[data-testid="stMain"] :is([data-testid="stVerticalBlockBorderWrapper"], [data-testid="stVerticalBlockBorderWrapper"] > div,
+  [data-testid="stVerticalBlock"][style*="border"], [data-testid="stExpander"], .allocation-chart, .dss-scroll) {
+  border-color:#dfe4e1; background:#fff; box-shadow:none;
+}
+[data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-question_option_"], .st-key-latest_card, .st-key-decision_card) {
+  border:1px solid #dfe4e1 !important; background:#fff; box-shadow:none;
+}
+[data-testid="stMain"] [class*="st-key-question_selected_"] { border:2px solid #344e41 !important; background:#f2f6f3; }
+[data-testid="stMain"] :is(.header-rule, .st-key-integrated_option, [role="tablist"], [class*="st-key-activity_"]) { border-color:#dfe4e1; }
+[data-testid="stMain"] :is(.about-intro, .product-paths span, .capability-icon, [data-testid="stMetric"], .result-status) {
+  background:#fff; border-color:#dfe4e1; box-shadow:none;
+}
+[data-testid="stMain"] .about-intro { border:1px solid #dfe4e1; }
+[data-testid="stMain"] [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) { background:#fff; border:1px solid #dfe4e1; }
+[data-testid="stMain"] .dss-table :is(th,td) { border-color:#dfe4e1; }
+[data-testid="stMain"] .dss-table th { background:#fff; border-bottom:2px solid #dfe4e1; }
+[data-testid="stMain"] .dss-table tr:nth-child(even) { background:#fff; }
+[data-testid="stMain"] .dss-table tbody tr:hover { background:#f2f6f3; }
+[data-testid="stMain"] .allocation-track { background:#edf0ee; }
+[data-testid="stMain"] :is([data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="textarea"], [data-baseweb="select"] > div,
+  .react-aria-ComboBox > div:has([role="combobox"]), [data-testid="stTextInputRootElement"], [data-testid="stTextAreaRootElement"],
+  [data-testid="stNumberInputContainer"]) { background:#fff; border-color:#dfe4e1; }
+[data-testid="stMain"] :is(input, textarea, [role="combobox"]) { background:#fff; }
+[data-testid="stMain"] :is([data-baseweb="input"], [data-baseweb="textarea"], [data-baseweb="select"] > div,
+  .react-aria-ComboBox > div:has([role="combobox"]), [data-testid="stTextInputRootElement"], [data-testid="stTextAreaRootElement"],
+  [data-testid="stNumberInputContainer"]):focus-within { border-color:#344e41; outline:2px solid #344e41; outline-offset:1px; }
