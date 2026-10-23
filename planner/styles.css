@@ -159,15 +159,15 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 .st-key-scenario_selector [data-testid="stWidgetLabel"] { flex:none; margin:0; padding:0; }
 .st-key-scenario_selector :is([data-baseweb="select"], .react-aria-ComboBox) { flex:1; min-width:0; }
 .st-key-scenario_selector [data-testid="stTooltipIcon"] { margin-left:.35rem; }
-/* Sage chooses a tool; primary green executes; other secondary actions support. */
+/* Warm ivory chooses a tool; primary green executes; white actions support. */
 [data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"] {
-  background:#e8eee3; border:1px solid #819875; color:#344e41;
+  background:#faf7f2; border:1px solid #a3b18a; color:#344e41;
   font-weight:600; transition:background-color .15s, border-color .15s;
 }
 [data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"] p { font-weight:600; }
 [data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]::after { content:" →"; margin-left:.4rem; }
 [data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"]:hover:not(:disabled) {
-  background:#d7e2cf; border-color:#344e41;
+  background:#e9e2d3; border-color:#a3b18a;
 }
 [data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]:focus-visible {
   outline:3px solid #588157; outline-offset:3px;

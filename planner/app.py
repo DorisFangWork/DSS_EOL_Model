@@ -601,7 +601,7 @@ page = st.session_state["page"]
 with heading:
     st.caption(f"Version {scenario.version} · {len(scenario.batteries)} packs")
 with action:
-    st.button("New analysis", type="secondary", icon=":material/add:", on_click=new_analysis,
+    st.button("New analysis", key="workflow_new_analysis", type="secondary", icon=":material/add:", on_click=new_analysis,
               help="Start another analysis using the current scenario.", width="stretch")
 st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
 st.title("About the DSS" if page == "Overview" else page)
