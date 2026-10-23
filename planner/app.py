@@ -204,6 +204,11 @@ def go(page, mode=None):
         st.session_state["mode"] = mode
 
 
+def new_analysis():
+    st.session_state.pop("mode", None)
+    go("Decision workspace")
+
+
 def current_basis(result, scenario):
     return (result["scenario_fingerprint"] == fingerprint(scenario)
             and result["implementation"]["core_source_sha256"] == implementation_record()["core_source_sha256"])
@@ -309,7 +314,7 @@ def dashboard(scenario):
         else:
             st.write("Ready to plan your battery dispositions")
             st.caption("Choose any tool above, or assess eligibility and create a fleet plan together.")
-            st.button("Start integrated analysis", type="primary", on_click=go, args=("Decision workspace", "Integrated decision"))
+            st.button("Start integrated analysis", on_click=go, args=("Decision workspace", "Integrated decision"))
     if history:
         capability_cards(compact=True)
     with st.expander("Planning context and limits"):
@@ -360,14 +365,14 @@ def workspace(scenario):
         with column, st.container(border=True, key=f"question_{'selected' if active else 'option'}_{MODES[name]}"):
             st.markdown(f'<div class="question-copy"><span class="question-label">{symbol} {html.escape(name)}</span>'
                         f'<h3>{html.escape(question)}</h3></div>', unsafe_allow_html=True)
-            st.button(("Selected · " if active else "") + action, key=f"choose_{name}",
+            st.button(action, key=f"choose_{name}",
                       type="primary" if active else "secondary", on_click=go,
                       args=("Decision workspace", name), width="stretch")
     integrated = selected == "Integrated decision"
     with st.container(key="integrated_option"):
         explanation, choose = st.columns([3, 2], vertical_alignment="center")
         explanation.caption("Combine capabilities: assess eligibility and plan the fleet together.")
-        choose.button("Selected · Integrated analysis" if integrated else "Assess and plan together",
+        choose.button("Assess and plan together",
                       key="choose_Integrated decision", on_click=go,
                       args=("Decision workspace", "Integrated decision"),
                       type="primary" if integrated else "secondary", width="stretch")
@@ -481,7 +486,7 @@ def results_page(scenario):
     st.caption("Completed analyses retain their input snapshots. Cloud history lasts for this session; download results to keep them.")
     if not history:
         st.info("No analyses yet. Open the Decision workspace to run a capability.")
-        st.button("Open decision workspace", on_click=go, args=("Decision workspace",))
+        st.button("Open decision workspace", type="primary", on_click=go, args=("Decision workspace",))
     else:
         result_tab, compare_tab = st.tabs(["Analysis results", "Compare scenarios"])
         with result_tab:
@@ -561,7 +566,7 @@ page = st.session_state["page"]
 with heading:
     st.markdown('<div class="workspace-bar">' + html.escape(scenario.scenario_id) + f'<span>v{scenario.version} · {len(scenario.batteries)} packs</span></div>', unsafe_allow_html=True)
 with action:
-    st.button("New analysis", icon=":material/add:", on_click=go, args=("Decision workspace",), width="stretch")
+    st.button("New analysis", type="primary", icon=":material/add:", on_click=new_analysis, width="stretch")
 st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
 st.title("About the DSS" if page == "Overview" else page)
 if "notice" in st.session_state:
