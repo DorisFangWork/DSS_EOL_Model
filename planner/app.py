@@ -396,14 +396,13 @@ def workspace(scenario):
         with column, st.container(border=True, key=f"question_{'selected' if active else 'option'}_{MODES[name]}"):
             st.markdown(f'<div class="question-copy"><span class="question-label">{symbol} {html.escape(name)}</span>'
                         f'<h3>{html.escape(question)}</h3></div>', unsafe_allow_html=True)
-            st.button(f"Selected · {action}" if active else action, key=f"choose_{name}",
+            st.button(action, key=f"choose_{name}",
                       type="secondary", on_click=go,
                       args=("Decision workspace", name), width="stretch")
-    integrated = selected == "Integrated decision"
     with st.container(key="integrated_option"):
         explanation, choose = st.columns([3, 2], vertical_alignment="center")
         explanation.caption("Combine capabilities: assess eligibility and plan the fleet together.")
-        choose.button("Selected · Assess and plan together" if integrated else "Assess and plan together",
+        choose.button("Assess and plan together",
                       key="choose_Integrated decision", on_click=go,
                       args=("Decision workspace", "Integrated decision"),
                       type="secondary", width="stretch")

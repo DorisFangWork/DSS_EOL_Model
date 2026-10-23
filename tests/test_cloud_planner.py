@@ -35,15 +35,16 @@ def test_question_cards_select_without_running_and_retain_selection():
     assert not any(b.key == "run" for b in app.button)
     assert len([b for b in app.button if b.key and b.key.startswith("choose_")]) == 4
     for label in ("Battery admissibility", "Destination determination", "Allocation planning", "Integrated decision"):
+        action_label = app.button(key=f"choose_{label}").label
         app.button(key=f"choose_{label}").click().run()
         assert app.session_state["mode"] == label
-        assert app.button(key=f"choose_{label}").label.startswith("Selected")
+        assert app.button(key=f"choose_{label}").label == action_label
         assert app.button(key=f"choose_{label}").proto.type == "secondary"
         assert app.button(key="run").proto.type == "primary"
         assert not app.session_state["runs"]
     app.button(key="nav_Dashboard").click().run()
     app.button(key="nav_Decision workspace").click().run()
-    assert app.button(key="choose_Integrated decision").label.startswith("Selected")
+    assert app.button(key="choose_Integrated decision").label == "Assess and plan together"
     assert not app.exception
 
 
