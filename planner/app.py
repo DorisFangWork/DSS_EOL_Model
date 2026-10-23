@@ -51,29 +51,50 @@ def table(rows):
         st.caption(f"Showing 300 of {len(rows)} rows; the run download contains every record.")
 
 
+def reset_configuration():
+    st.session_state["config_generation"] = st.session_state.get("config_generation", 0) + 1
+
+
+def configuration_changes(before, after, path=""):
+    """Summarise settings and keep imported record collections compact."""
+    if before == after:
+        return []
+    if isinstance(before, dict) and isinstance(after, dict):
+        return [row for key in dict.fromkeys([*before, *after])
+                for row in configuration_changes(before.get(key), after.get(key),
+                                                 f"{path} / {key}" if path else key)]
+    if isinstance(before, list) and isinstance(after, list):
+        if path in ("destinations", "resources") and len(before) == len(after):
+            return [row for old, new in zip(before, after)
+                    for row in configuration_changes(old, new, new.get("name", path))]
+        before, after = f"{len(before)} records", f"{len(after)} records (updated)"
+    return [{"Setting": path.replace("_", " "), "Applied": before, "Draft": after}]
+
+
 def configure(scenario):
+    generation = st.session_state.get("config_generation", 0)
     st.subheader("Set the rules and limits for this scenario")
     st.caption("Edit a draft, then apply it to the shared scenario. Leaving this page discards unapplied edits.")
     with st.container(border=True):
-        st.subheader("Scenario details")
-        uploaded = None if SYNTHETIC_CLOUD else st.file_uploader("Load a complete scenario JSON", type="json")
+        st.subheader("Scenario")
+        uploaded = None if SYNTHETIC_CLOUD else st.file_uploader("Load a complete scenario JSON", type="json", key=f"config_upload_{generation}")
         base = (scenario_from_json(uploaded.getvalue().decode("utf-8-sig")) if uploaded else
                 scenario)
-        base_key = fingerprint(base)[:10]
+        base_key = f"{generation}_{fingerprint(base)[:10]}"
         if not SYNTHETIC_CLOUD:
             with st.expander("Edit complete scenario / assessments"):
-                if st.checkbox("Use edited scenario JSON", key="edit_json"):
+                if st.checkbox("Use edited scenario JSON", key=f"edit_json_{generation}"):
                     text = st.text_area("Scenario definition", scenario_json(base), height=350, key=f"json_{base_key}")
                     base = scenario_from_json(text)
-                    base_key = fingerprint(base)[:10]
+                    base_key = f"{generation}_{fingerprint(base)[:10]}"
         details, version = st.columns([3, 1])
         sid = details.text_input("Scenario name", base.scenario_id, key=f"name_{base_key}")
         revision = version.number_input("Scenario version", min_value=1, value=base.version, key=f"version_{base_key}")
         actor = st.text_input("Decision maker", base.decision_maker, key=f"actor_{base_key}")
         if not SYNTHETIC_CLOUD:
             with st.expander("Import or enter battery records"):
-                csv_upload = st.file_uploader("Battery CSV", type="csv")
-                manual = st.text_area("Or paste CSV with the seven existing dataset columns", key="manual_csv")
+                csv_upload = st.file_uploader("Battery CSV", type="csv", key=f"config_csv_{generation}")
+                manual = st.text_area("Or paste CSV with the seven existing dataset columns", key=f"manual_csv_{generation}")
                 if csv_upload and manual.strip():
                     raise ValueError("Use either a CSV upload or pasted records, not both")
                 content = csv_upload.getvalue() if csv_upload else manual.encode() if manual.strip() else None
@@ -81,54 +102,64 @@ def configure(scenario):
                     batteries = batteries_from_csv(content)
                     base = replace(base, batteries=batteries, values=(), deferral_costs={},
                                    source=base.source + "; imported battery CSV sha256=" + hashlib.sha256(content).hexdigest())
-                    if st.checkbox("Apply illustrative Model 0 valuations to these packs", key="apply_formulas"):
+                    if st.checkbox("Apply illustrative Model 0 valuations to these packs", key=f"apply_formulas_{generation}"):
                         base = value_synthetic_batteries(base, batteries)
                     else:
                         st.caption("Admission can use partial records. Comparison/allocation need explicit assessments; use a complete scenario JSON or opt into the illustrative formulas.")
-        destinations = []
-        demand = {}
-        with st.expander("Destination requirements, capacity and demand", expanded=True):
-            for d in base.destinations:
+    destinations = []
+    demand = {}
+    st.subheader("Destinations")
+    with st.container():
+        for d in base.destinations:
+            with st.container(border=True):
                 key = f"{base_key}_{d.pathway_id}"
                 st.subheader(d.name)
                 entry, limits = st.columns(2)
                 entry.caption("ENTRY REQUIREMENTS")
                 limits.caption("CAPACITY & DEMAND")
                 has_soh = entry.checkbox("Minimum SOH applies", d.min_soh is not None, key=f"soh_on_{key}")
-                soh = entry.number_input("Minimum SOH", min_value=0.0, max_value=1.0, value=d.min_soh or 0.0, step=0.01, key=f"soh_{key}", disabled=not has_soh)
+                soh = entry.number_input("Minimum SOH (0–1)", help="0.70 means 70% state of health.", min_value=0.0, max_value=1.0, value=d.min_soh or 0.0, step=0.01, key=f"soh_{key}", disabled=not has_soh)
                 has_safety = entry.checkbox("Safety-class ceiling applies", d.max_safety_class is not None, key=f"safe_on_{key}")
-                safety = entry.number_input("Maximum safety class", min_value=0, value=d.max_safety_class or 0, key=f"safe_{key}", disabled=not has_safety)
+                safety = entry.number_input("Maximum safety class", help="Battery safety-class number must be at or below this ceiling. Class meanings follow the scenario dataset.", min_value=0, value=d.max_safety_class or 0, key=f"safe_{key}", disabled=not has_safety)
                 chem = entry.text_input("Allowed chemistries (comma-separated; blank means no rule)", ",".join(d.allowed_chemistries or ()), key=f"chem_{key}")
                 bounded = limits.checkbox("Limit destination capacity", d.capacity is not None, key=f"cap_on_{key}")
-                capacity = limits.number_input("Destination capacity", min_value=0.0, value=float(d.capacity or 0), key=f"cap_{key}", disabled=not bounded)
+                capacity = limits.number_input("Destination capacity (assessment units)", help="Limits total assessed pathway capacity use. If each pack uses one unit, this is a pack limit.", min_value=0.0, value=float(d.capacity or 0), key=f"cap_{key}", disabled=not bounded)
                 limit_demand = limits.checkbox("Limit compatible demand (packs)", d.pathway_id in base.demand_limits, key=f"dem_on_{key}")
-                demand_value = limits.number_input("Compatible demand", min_value=0.0, value=float(base.demand_limits.get(d.pathway_id, len(base.batteries))), key=f"dem_{key}", disabled=not limit_demand)
+                demand_value = limits.number_input("Compatible demand (packs)", help="Maximum number of packs assigned to this destination.", min_value=0.0, value=float(base.demand_limits.get(d.pathway_id, len(base.batteries))), key=f"dem_{key}", disabled=not limit_demand)
                 if limit_demand:
                     demand[d.pathway_id] = demand_value
                 destinations.append(replace(d, min_soh=soh if has_soh else None, max_safety_class=safety if has_safety else None,
                                             allowed_chemistries=tuple(c.strip() for c in chem.split(",") if c.strip()) or None,
                                             capacity=capacity if bounded else None))
-        resources = []
-        with st.expander("Shared resources and emissions constraint"):
-            for resource in base.resources:
-                capacity = st.number_input(f"{resource.name} ({resource.unit})", min_value=0.0,
-                                           value=float(resource.capacity), key=f"res_{base_key}_{resource.resource_id}")
-                resources.append(replace(resource, capacity=capacity))
-            floor_on = st.checkbox("Require minimum avoided emissions", base.co2_floor_kg is not None, key=f"floor_on_{base_key}")
-            floor = st.number_input("Avoided emissions floor (kg CO2e)", min_value=0.0, value=float(base.co2_floor_kg or 0), key=f"floor_{base_key}", disabled=not floor_on)
-        candidate = replace(base, scenario_id=sid, version=int(revision), decision_maker=actor,
-                           destinations=tuple(destinations), resources=tuple(resources), demand_limits=demand,
-                           co2_floor_kg=floor if floor_on else None)
-        if fingerprint(candidate) != fingerprint(scenario):
-            st.warning("Unapplied changes. Existing results still refer to the applied scenario.")
+    resources = []
+    st.subheader("Shared constraints")
+    with st.container(border=True):
+        for resource in base.resources:
+            capacity = st.number_input(f"{resource.name} ({resource.unit})", min_value=0.0,
+                                       value=float(resource.capacity), key=f"res_{base_key}_{resource.resource_id}")
+            resources.append(replace(resource, capacity=capacity))
+        floor_on = st.checkbox("Require minimum avoided emissions", base.co2_floor_kg is not None, key=f"floor_on_{base_key}")
+        floor = st.number_input("Avoided emissions floor (kg CO2e)", min_value=0.0, value=float(base.co2_floor_kg or 0), key=f"floor_{base_key}", disabled=not floor_on)
+    candidate = replace(base, scenario_id=sid, version=int(revision), decision_maker=actor,
+                       destinations=tuple(destinations), resources=tuple(resources), demand_limits=demand,
+                       co2_floor_kg=floor if floor_on else None)
+    st.subheader("Review & apply")
+    with st.container(border=True):
+        changes = configuration_changes(plain(scenario), plain(candidate))
+        if changes:
+            st.caption("Unapplied changes. Existing results still refer to the applied scenario.")
+            table(changes)
         else:
             st.caption("All settings match the applied scenario.")
-        if st.button("Apply configuration", type="primary", key="apply"):
+        apply, discard = st.columns(2)
+        if apply.button("Apply configuration", type="primary", key="apply", disabled=not changes):
             st.session_state["scenario"] = candidate
+            reset_configuration()
             st.session_state["notice"] = "Configuration applied. Run a capability to assess this scenario."
             st.rerun()
+        discard.button("Discard changes", on_click=reset_configuration, disabled=not changes)
     with st.expander("Battery inventory"):
-        table(plain(scenario.batteries))
+        table(plain(candidate.batteries))
 
 
 def show_result(result):
