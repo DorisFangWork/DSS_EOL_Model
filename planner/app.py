@@ -583,21 +583,27 @@ with st.sidebar:
     st.divider()
     st.caption("Synthetic examples · Session-only results · Download snapshots to retain your work" if SYNTHETIC_CLOUD else "Local planning workspace")
 
-scenario_control, heading, action = st.columns([1.2, 3, 1.2], vertical_alignment="center")
-with scenario_control, st.popover("Scenario", icon=":material/folder_open:", width="stretch"):
-    example = st.selectbox("Starting scenario", ["Synthetic 60-pack fleet", "Two-pack capacity example"], key="example")
-    st.caption("Changing the example replaces inputs; completed runs stay in this session.")
-    if st.session_state.get("loaded_example") != example:
-        st.session_state["scenario"] = (synthetic_scenario() if example == "Synthetic 60-pack fleet" else scenario_from_json((ROOT / "configs/dss/scarcity.json").read_text(encoding="utf-8")))
-        st.session_state["loaded_example"] = example
-    scenario = st.session_state["scenario"]
-    st.download_button("Download current scenario", scenario_json(scenario), "scenario.json", "application/json", width="stretch")
+# Resolve the active example before rendering its name in the shared banner.
+example = st.session_state.get("example", "Synthetic 60-pack fleet")
+if st.session_state.get("loaded_example") != example:
+    st.session_state["scenario"] = (synthetic_scenario() if example == "Synthetic 60-pack fleet" else scenario_from_json((ROOT / "configs/dss/scarcity.json").read_text(encoding="utf-8")))
+    st.session_state["loaded_example"] = example
+scenario = st.session_state["scenario"]
+
+scenario_control, heading, action = st.columns([2.4, 1.8, 1.2], vertical_alignment="center")
+with scenario_control, st.container(key="scenario_selector"):
+    st.selectbox(
+        "Scenario", ["Synthetic 60-pack fleet", "Two-pack capacity example"], key="example",
+        help=f"Active scenario: {scenario.scenario_id}. Changing the example replaces inputs; "
+             "completed runs stay in this session. Edit rules and limits on the Configuration page.",
+    )
 
 page = st.session_state["page"]
 with heading:
-    st.markdown('<div class="workspace-bar">' + html.escape(scenario.scenario_id) + f'<span>v{scenario.version} · {len(scenario.batteries)} packs</span></div>', unsafe_allow_html=True)
+    st.caption(f"Version {scenario.version} · {len(scenario.batteries)} packs")
 with action:
-    st.button("New analysis", type="primary", icon=":material/add:", on_click=new_analysis, width="stretch")
+    st.button("New analysis", type="primary", icon=":material/add:", on_click=new_analysis,
+              help="Start another analysis using the current scenario.", width="stretch")
 st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
 st.title("About the DSS" if page == "Overview" else page)
 if "notice" in st.session_state:

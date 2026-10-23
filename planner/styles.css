@@ -153,3 +153,25 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
   .capability-copy, .capability-copy.compact { grid-template-rows:auto; }
   .question-copy { grid-template-rows:auto auto; }
 }
+
+/* Keep the banner selector label and help beside its input. */
+.st-key-scenario_selector [data-testid="stSelectbox"] { display:flex; align-items:center; gap:.6rem; }
+.st-key-scenario_selector [data-testid="stWidgetLabel"] { flex:none; margin:0; padding:0; }
+.st-key-scenario_selector :is([data-baseweb="select"], .react-aria-ComboBox) { flex:1; min-width:0; }
+.st-key-scenario_selector [data-testid="stTooltipIcon"] { margin-left:.35rem; }
+/* Capability actions retain equal emphasis across dashboard cards. */
+[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"] {
+  background:#e8eee3; border:1px solid #819875; color:#344e41;
+  font-weight:600; transition:background-color .15s, border-color .15s;
+}
+[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"] p { font-weight:600; }
+[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]::after { content:" →"; margin-left:.4rem; }
+[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]:hover:not(:disabled) {
+  background:#d7e2cf; border-color:#344e41;
+}
+[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]:focus-visible {
+  outline:3px solid #588157; outline-offset:3px;
+}
+[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"] {
+  width:auto; min-width:0; max-width:100%; padding:.4rem 1rem;
+}
