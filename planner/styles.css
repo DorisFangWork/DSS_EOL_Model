@@ -212,3 +212,10 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 [data-testid="stMain"] :is([data-baseweb="input"], [data-baseweb="textarea"], [data-baseweb="select"] > div,
   .react-aria-ComboBox > div:has([role="combobox"]), [data-testid="stTextInputRootElement"], [data-testid="stTextAreaRootElement"],
   [data-testid="stNumberInputContainer"]):focus-within { border-color:#344e41; outline:2px solid #344e41; outline-offset:1px; }
+
+/* Disabled actions remain legible without resembling enabled execution buttons. */
+[data-testid="stMain"] button:is([kind="primary"], [kind="secondary"]):disabled {
+  background:#edf0ee; border-color:#dfe4e1; color:#52604f; opacity:1;
+  box-shadow:none; cursor:not-allowed;
+}
+[data-testid="stMain"] button:is([kind="primary"], [kind="secondary"]):disabled p { color:#52604f; }
