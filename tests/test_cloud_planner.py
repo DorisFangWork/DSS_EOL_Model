@@ -38,6 +38,8 @@ def test_question_cards_select_without_running_and_retain_selection():
         app.button(key=f"choose_{label}").click().run()
         assert app.session_state["mode"] == label
         assert app.button(key=f"choose_{label}").label.startswith("Selected")
+        assert app.button(key=f"choose_{label}").proto.type == "secondary"
+        assert app.button(key="run").proto.type == "primary"
         assert not app.session_state["runs"]
     app.button(key="nav_Dashboard").click().run()
     app.button(key="nav_Decision workspace").click().run()
@@ -118,7 +120,7 @@ def test_cloud_synthetic_modes_and_downloads_without_local_storage(monkeypatch):
     assert app.metric[0].value == "89,082.37"
     assert all(button.label != "Save run to local history" for button in app.button)
     assert {b.label for b in app.get("download_button")} == {
-        "Download current scenario", "Download eligibility evidence", "Download complete run"}
+        "Download eligibility evidence", "Download complete run"}
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
     for mode in ("Battery admissibility", "Destination determination", "Allocation planning", "Integrated decision"):
         app.button(key="nav_" + "Decision workspace").click().run()
@@ -159,7 +161,7 @@ def test_configuration_apply_history_comparison_and_stale_evidence():
     capacity = next(n for n in app.number_input if n.key.startswith("cap_") and n.key.endswith("_repurpose"))
     capacity.set_value(2.0).run()
     assert app.session_state["scenario"].destinations[0].capacity == 1
-    assert any("Unapplied changes" in w.value for w in app.warning)
+    assert any("Unapplied changes" in w.value for w in app.caption)
     app.button(key="apply").click().run()
     assert app.session_state["scenario"].destinations[0].capacity == 2
     app.button(key="nav_" + "Results & comparison").click().run()

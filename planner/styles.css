@@ -121,7 +121,7 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 .st-key-latest_card [data-testid="stMetricValue"] { font-size:1.7rem; }
 [class*="st-key-activity_"] { border-bottom:1px solid #e9e2d3; padding:.4rem 0; }
 .question-copy { display:grid; grid-template-rows:minmax(2rem,auto) minmax(4.8rem,auto); gap:.75rem; margin-bottom:.5rem; }
-.question-copy h3 { font-size:1.15rem !important; line-height:1.35; margin:0; padding:0; }
+.question-copy h3 { font-size:1.3rem !important; font-weight:650; line-height:1.35; margin:0; padding:0; }
 .question-label { color:#52604f; font-size:.9rem; font-weight:600; }
 [class*="st-key-question_option_"] { border:1px solid #e3e7e1 !important; }
 [class*="st-key-question_selected_"] { background:#faf7f2; border:2px solid #344e41 !important; }
@@ -159,14 +159,14 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 .st-key-scenario_selector [data-testid="stWidgetLabel"] { flex:none; margin:0; padding:0; }
 .st-key-scenario_selector :is([data-baseweb="select"], .react-aria-ComboBox) { flex:1; min-width:0; }
 .st-key-scenario_selector [data-testid="stTooltipIcon"] { margin-left:.35rem; }
-/* Capability actions retain equal emphasis across dashboard cards. */
-[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"] {
+/* Sage chooses a tool; primary green executes; other secondary actions support. */
+[data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"] {
   background:#e8eee3; border:1px solid #819875; color:#344e41;
   font-weight:600; transition:background-color .15s, border-color .15s;
 }
-[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"] p { font-weight:600; }
+[data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"] p { font-weight:600; }
 [data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]::after { content:" →"; margin-left:.4rem; }
-[data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]:hover:not(:disabled) {
+[data-testid="stMain"] :is([class*="st-key-capability_"], [class*="st-key-choose_"], [class*="st-key-workflow_"]) button[kind="secondary"]:hover:not(:disabled) {
   background:#d7e2cf; border-color:#344e41;
 }
 [data-testid="stMain"] [class*="st-key-capability_"] button[kind="secondary"]:focus-visible {

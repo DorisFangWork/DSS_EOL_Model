@@ -289,8 +289,8 @@ def overview(scenario):
                 '<p>Turn battery information and operational constraints into traceable disposition plans.</p>'
                 '<div class="product-paths"><span>BATTERY INFORMATION</span><b>↔</b><span>DECISION CAPABILITIES</span><b>↔</b><span>PLANNING CONTEXT</span></div></section>', unsafe_allow_html=True)
     left, right = st.columns([1, 1])
-    left.button("Open planning dashboard", type="primary", on_click=go, args=("Dashboard",), width="stretch")
-    right.button("Explore a decision", on_click=go, args=("Decision workspace",), width="stretch")
+    left.button("Open planning dashboard", on_click=go, args=("Dashboard",), width="stretch")
+    right.button("Explore a decision", key="workflow_explore", on_click=go, args=("Decision workspace",), width="stretch")
     st.subheader("Make the trade-offs visible")
     st.write("A battery can suit more than one destination. Limited capacity, compatible demand and competing priorities determine which options make sense for the fleet. Disposition DSS brings these decisions into one shared planning workspace.")
     st.caption("For OEM disposition planners and teams evaluating second-life and recycling options.")
@@ -324,7 +324,7 @@ def dashboard(scenario):
             latest = history[-1]
             summary, action = st.columns([3, 1])
             summary.caption(f"{mode_label(latest['mode'])} · {latest['status']} · {latest['scenario']['scenario_id']} · {latest['run_id'][:8]}")
-            action.button("Review results", key="review_latest", type="primary", on_click=review_run, args=(latest["run_id"],), width="stretch")
+            action.button("Review results", key="review_latest", on_click=review_run, args=(latest["run_id"],), width="stretch")
             if not current_basis(latest, scenario):
                 st.warning("This analysis uses an earlier scenario or model version.")
             else:
@@ -345,7 +345,7 @@ def dashboard(scenario):
         else:
             st.write("Ready to plan your battery dispositions")
             st.caption("Choose any tool above, or assess eligibility and create a fleet plan together.")
-            st.button("Start integrated analysis", on_click=go, args=("Decision workspace", "Integrated decision"))
+            st.button("Start integrated analysis", key="workflow_integrated", on_click=go, args=("Decision workspace", "Integrated decision"))
     if history:
         capability_cards(compact=True)
     with st.expander("Planning context and limits"):
@@ -396,17 +396,17 @@ def workspace(scenario):
         with column, st.container(border=True, key=f"question_{'selected' if active else 'option'}_{MODES[name]}"):
             st.markdown(f'<div class="question-copy"><span class="question-label">{symbol} {html.escape(name)}</span>'
                         f'<h3>{html.escape(question)}</h3></div>', unsafe_allow_html=True)
-            st.button(action, key=f"choose_{name}",
-                      type="primary" if active else "secondary", on_click=go,
+            st.button(f"Selected · {action}" if active else action, key=f"choose_{name}",
+                      type="secondary", on_click=go,
                       args=("Decision workspace", name), width="stretch")
     integrated = selected == "Integrated decision"
     with st.container(key="integrated_option"):
         explanation, choose = st.columns([3, 2], vertical_alignment="center")
         explanation.caption("Combine capabilities: assess eligibility and plan the fleet together.")
-        choose.button("Assess and plan together",
+        choose.button("Selected · Assess and plan together" if integrated else "Assess and plan together",
                       key="choose_Integrated decision", on_click=go,
                       args=("Decision workspace", "Integrated decision"),
-                      type="primary" if integrated else "secondary", width="stretch")
+                      type="secondary", width="stretch")
     if selected not in MODES:
         st.info("Select a decision question above to see its settings and run the analysis.")
         return
@@ -433,7 +433,7 @@ def workspace(scenario):
             unknown = "exclude" if st.checkbox("Explicitly exclude undetermined options from allocation", key="exclude_unknown", persist_state="session") else "reject"
         if mode == "allocation":
             evidence_file = None if SYNTHETIC_CLOUD else st.file_uploader("Supplied eligibility JSON", type="json", key="eligibility_upload")
-            if st.button("Assess current rules and prepare eligibility", key="prepare"):
+            if st.button("Assess current rules and prepare eligibility", key="prepare", type="primary" if st.session_state.get("prepared_evidence", {}).get("scenario_fingerprint") != fingerprint(scenario) else "secondary"):
                 st.session_state["prepared_evidence"] = eligibility_evidence(scenario)
             if evidence_file:
                 st.session_state["prepared_evidence"] = load_json(evidence_file.getvalue().decode("utf-8-sig"))
@@ -517,7 +517,7 @@ def results_page(scenario):
     st.caption("Completed analyses retain their input snapshots. Cloud history lasts for this session; download results to keep them.")
     if not history:
         st.info("No analyses yet. Open the Decision workspace to run a capability.")
-        st.button("Open decision workspace", type="primary", on_click=go, args=("Decision workspace",))
+        st.button("Open decision workspace", key="workflow_workspace", on_click=go, args=("Decision workspace",))
     else:
         result_tab, compare_tab = st.tabs(["Analysis results", "Compare scenarios"])
         with result_tab:
