@@ -399,7 +399,7 @@ def workspace(scenario):
             st.button(action, key=f"choose_{name}",
                       type="secondary", on_click=go,
                       args=("Decision workspace", name), width="stretch")
-    with st.container(key="integrated_option"):
+    with st.container(key="integrated_selected" if selected == "Integrated decision" else "integrated_option"):
         explanation, choose = st.columns([3, 2], vertical_alignment="center")
         explanation.caption("Combine capabilities: assess eligibility and plan the fleet together.")
         choose.button("Assess and plan together",
@@ -434,6 +434,7 @@ def workspace(scenario):
             evidence_file = None if SYNTHETIC_CLOUD else st.file_uploader("Supplied eligibility JSON", type="json", key="eligibility_upload")
             if st.button("Assess current rules and prepare eligibility", key="prepare", type="primary" if st.session_state.get("prepared_evidence", {}).get("scenario_fingerprint") != fingerprint(scenario) else "secondary"):
                 st.session_state["prepared_evidence"] = eligibility_evidence(scenario)
+                st.rerun()
             if evidence_file:
                 st.session_state["prepared_evidence"] = load_json(evidence_file.getvalue().decode("utf-8-sig"))
             prepared = st.session_state.get("prepared_evidence")
