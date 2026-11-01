@@ -186,7 +186,7 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 
 /* Main-page surfaces only: the sidebar retains its established palette. */
 [data-testid="stMain"] { --dss-line:#dfe4e1; }
-[data-testid="stMain"] :is([data-testid="stVerticalBlockBorderWrapper"], [data-testid="stVerticalBlockBorderWrapper"] > div,
+[data-testid="stMain"] :where([data-testid="stVerticalBlockBorderWrapper"], [data-testid="stVerticalBlockBorderWrapper"] > div,
   [data-testid="stVerticalBlock"][style*="border"], [data-testid="stExpander"], .allocation-chart, .dss-scroll) {
   border-color:#dfe4e1; background:#fff; box-shadow:none;
 }
