@@ -262,7 +262,7 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
   border:1px solid var(--dss-card-border) !important;
   border-radius:10px; box-shadow:var(--dss-card-shadow);
 }
-[data-testid="stMain"] :is([data-testid="stMetric"], .allocation-chart) {
+[data-testid="stMain"] :is(div[data-testid="stMetric"], div.allocation-chart) {
   border-color:var(--dss-card-border); box-shadow:var(--dss-card-shadow);
 }
 [data-testid="stMain"] :is([class*="st-key-question_selected_"], .st-key-integrated_selected) {
