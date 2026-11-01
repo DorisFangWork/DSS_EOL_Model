@@ -15,6 +15,27 @@ Icon-labelled sidebar buttons provide application navigation. The compact worksp
 
 ## Industry positioning
 
+### Central Decision-maker dashboard
+
+Dashboard now provides an overall prototype view through four independently rendered
+sections in `planner/dashboard.py`: Disposition planning, Technical assessment,
+Management overview, and Review & assurance. All four use the same selected
+analysis snapshot, including its original scenario. Before a run, the applied
+scenario is shown with explicit empty states; admission-only or infeasible runs
+never borrow allocation totals from another run.
+
+Use **Analysis snapshot** to review a run, **Compare against baseline** for an
+explicit comparison of evaluated allocations, and the section actions to open the
+existing capability workspaces. Historical input/model warnings apply to the
+whole view. Inventory and capacity details follow the selected snapshot; editing
+configuration still applies to the active scenario in the toolbar. Downloads
+preserve the complete selected run.
+
+Central Decision-maker is the integrated prototype perspective. Separate section
+renderers provide a boundary for future role views; authentication, role assignment,
+permission enforcement and operational approval are not implemented by this view.
+Future access controls must cover underlying data and actions as well as visible sections.
+
 Introduce the tool around an operational question: which destinations are eligible, which options are preferred, and how should a fleet be allocated under shared constraints? Demonstrate a capacity change and inspect its battery-level consequences. The three capabilities interact through shared inputs and evidence; they are not mandatory sequential stages.
 
 An industry pilot should identify a decision owner, validate battery data and destination rules, agree assessment values and operational limits, and compare proposed plans with current practice. Economic savings, environmental benefits and service–recovery coordination gains require validation; synthetic examples are demonstrations of functionality.

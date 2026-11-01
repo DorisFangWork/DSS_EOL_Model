@@ -18,6 +18,7 @@ from dss.application import compare_runs, eligibility_evidence, implementation_r
 from dss.flow import synthetic_scenario, value_synthetic_batteries
 from dss.serialization import batteries_from_csv, fingerprint, load_json, plain, scenario_from_json, scenario_json
 from dss.storage import RunStore
+from planner.dashboard import render_dashboard
 
 STORE_PATH = ROOT / "results" / "dss" / "runs.sqlite"
 SYNTHETIC_CLOUD = globals().get("SYNTHETIC_CLOUD", False)
@@ -311,71 +312,8 @@ def overview(scenario):
 
 
 def dashboard(scenario):
-    history = st.session_state["runs"]
-    st.markdown('<div class="context-strip">' + ''.join(
-        f'<span><strong>{value}</strong> {label}</span>' for value, label in [
-            (len(scenario.batteries), "battery packs"), (len(scenario.destinations), "destinations"),
-            (len(scenario.resources), "shared resources"), (len(history), "session analyses")]) + '</div>', unsafe_allow_html=True)
-    if not history:
-        capability_cards(compact=True)
-    with st.container(border=True, key="latest_card"):
-        st.subheader("Latest analysis")
-        if history:
-            latest = history[-1]
-            summary, action = st.columns([3, 1])
-            summary.caption(f"{mode_label(latest['mode'])} · {latest['status']} · {latest['scenario']['scenario_id']} · {latest['run_id'][:8]}")
-            action.button("Review results", key="review_latest", on_click=review_run, args=(latest["run_id"],), width="stretch")
-            if not current_basis(latest, scenario):
-                st.warning("This analysis uses an earlier scenario or model version.")
-            else:
-                st.caption("Current inputs · Matches the applied scenario and model.")
-            if latest.get("evaluation"):
-                chart, outcomes = st.columns([1.5, 1])
-                with chart:
-                    allocation_chart(latest)
-                with outcomes:
-                    report = latest["evaluation"]
-                    st.metric(f"Economic objective ({latest['scenario']['currency']})", f"{report['economic_objective']:,.2f}")
-                    st.metric("Assessed avoided emissions (kg CO2e)", f"{report['avoided_co2_kg']:,.2f}")
-            elif latest.get("solver"):
-                st.warning("No certified feasible plan. Review the analysis before using its results.")
-            else:
-                table([{"status": status.title(), "battery_destination_options": sum(r["status"] == status for r in latest["eligibility"])}
-                       for status in ("eligible", "ineligible", "undetermined")])
-        else:
-            st.write("Ready to plan your battery dispositions")
-            st.caption("Choose any tool above, or assess eligibility and create a fleet plan together.")
-            st.button("Start integrated analysis", key="workflow_integrated", on_click=go, args=("Decision workspace", "Integrated decision"))
-    if history:
-        capability_cards(compact=True)
-    with st.expander("Planning context and limits"):
-        st.write(scenario.decision_maker)
-        st.caption(scenario.horizon)
-        table([{"destination": d.name, "capacity": d.capacity, "demand_limit_packs": scenario.demand_limits.get(d.pathway_id)} for d in scenario.destinations])
-        st.button("Configure scenario", on_click=go, args=("Configuration",))
-    st.subheader("Recent activity")
-    history = st.session_state["runs"]
-    if history:
-        for r in reversed(history[-5:]):
-            with st.container(key=f"activity_{r['run_id']}"):
-                summary, action = st.columns([4, 1])
-                with summary:
-                    st.write(f"**{mode_label(r['mode'])}** · {r['status']}")
-                    basis = "Current inputs" if current_basis(r, scenario) else "Historical inputs"
-                    st.caption(f"{r['scenario']['scenario_id']} · {r['run_id'][:8]} · {basis}")
-                action.button("Open run", key=f"review_{r['run_id']}", on_click=review_run, args=(r["run_id"],), width="stretch")
-        st.caption("Showing the latest five runs. All session runs remain in Results & comparison.")
-    else:
-        st.caption("Completed assessments and allocation plans will appear here.")
-    with st.expander(f"Battery inventory · {len(scenario.batteries)} packs"):
-        query = st.text_input("Find a battery", placeholder="Battery ID or chemistry", key="inventory_search").strip().casefold()
-        rows = [b for b in plain(scenario.batteries) if not query or
-                query in str(b["asset_id"]).casefold() or query in str(b.get("chemistry", "")).casefold()]
-        st.caption(f"{len(rows)} of {len(scenario.batteries)} batteries")
-        if rows:
-            table(rows)
-        else:
-            st.info("No batteries match your search. Try another ID or chemistry.")
+    render_dashboard(scenario, st.session_state["runs"], go=go, review_run=review_run,
+                     table=table, allocation_chart=allocation_chart, mode_label=mode_label, current_basis=current_basis)
 
 
 def mode_label(mode):

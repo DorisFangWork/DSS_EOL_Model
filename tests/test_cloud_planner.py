@@ -9,7 +9,9 @@ def test_console_dashboard_snapshot_summary_and_scenario_switch():
     pytest.importorskip("streamlit")
     from streamlit.testing.v1 import AppTest
     app = AppTest.from_file(str(ROOT / "planner/cloud_app.py")).run(timeout=30)
-    assert not app.metric  # Context is a compact strip, not outcome cards.
+    assert not app.metric  # No fabricated outcome totals before an analysis.
+    assert {s.value for s in app.subheader} >= {
+        "Central Decision-maker", "Disposition planning", "Technical assessment", "Management overview", "Review & assurance"}
     app.selectbox(key="example").set_value("Two-pack capacity example").run()
     app.button(key="nav_Decision workspace").click().run()
     assert not any(b.key == "run" for b in app.button)
@@ -71,7 +73,7 @@ def test_recent_runs_latest_review_comparison_defaults_and_inventory_search():
     app.selectbox(key="selected_run").set_value(history[0]["run_id"]).run()
     app.button(key="nav_Dashboard").click().run()
     app.button(key="review_latest").click().run()
-    assert app.selectbox(key="selected_run").value == history[2]["run_id"]
+    assert app.selectbox(key="selected_run").value == history[0]["run_id"]  # Dashboard reviews its selected snapshot.
     app.button(key="nav_Dashboard").click().run()
     app.button(key=f"review_{history[0]['run_id']}").click().run()
     assert app.selectbox(key="selected_run").value == history[0]["run_id"]
@@ -210,3 +212,62 @@ def test_admission_handoff_and_incompatible_comparison():
     app.selectbox(key="alternative_run").set_value(history[2]["run_id"]).run()
     assert any("matching currency and planning horizon" in w.value for w in app.warning)
     assert not any(m.delta for m in app.metric)
+
+
+def test_central_dashboard_uses_one_snapshot_and_explicit_baseline():
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+    app = AppTest.from_file(str(ROOT / "planner/cloud_app.py")).run(timeout=30)
+    app.selectbox(key="example").set_value("Two-pack capacity example").run()
+    app.button(key="workflow_integrated").click().run()
+    app.button(key="run").click().run()
+    first = app.session_state["runs"][-1]
+    app.button(key="nav_Configuration").click().run()
+    next(n for n in app.number_input if n.key.startswith("cap_") and n.key.endswith("_repurpose")).set_value(2.0).run()
+    app.button(key="apply").click().run()
+    app.button(key="nav_Dashboard").click().run()
+    assert any("Historical snapshot" in w.value for w in app.warning)
+    assert app.metric[0].value == "17.00"
+    app.button(key="workflow_integrated").click().run()
+    app.button(key="run").click().run()
+    second = app.session_state["runs"][-1]
+    app.button(key="nav_Dashboard").click().run()
+    assert app.selectbox(key="selected_run").value == second["run_id"]
+    assert app.metric[0].value == "18.00"
+    assert not any(m.delta for m in app.metric)
+    app.selectbox(key="dashboard_baseline").set_value(first["run_id"]).run()
+    assert app.metric[0].delta == "+1.00"
+    app.button(key="open_admission").click().run()
+    app.button(key="run").click().run()
+    admission = app.session_state["runs"][-1]
+    app.button(key="nav_Dashboard").click().run()
+    assert app.selectbox(key="selected_run").value == admission["run_id"]
+    assert not app.metric  # Previous allocation is never mixed into an admission-only snapshot.
+    assert any("No allocation in this view" in item.value for item in app.info)
+    app.selectbox(key="selected_run").set_value(first["run_id"]).run()
+    assert app.metric[0].value == "17.00"
+    assert app.session_state["runs"][0] == first
+    app.button(key="review_latest").click().run()
+    assert app.session_state["page"] == "Results & comparison"
+    assert app.selectbox(key="selected_run").value == first["run_id"]
+    assert not app.exception and not app.error
+
+
+def test_central_dashboard_partial_evidence_and_infeasible_result():
+    from dataclasses import replace
+    from dss.application import run
+    from dss.flow import synthetic_scenario
+    from planner.dashboard import snapshot_summary
+    scenario = synthetic_scenario()
+    partial = replace(scenario, batteries=(replace(scenario.batteries[0], soh=None), *scenario.batteries[1:]), values=())
+    admission = run(partial, "admission")
+    summary = snapshot_summary(scenario, admission)
+    assert summary["scenario"] == admission["scenario"]
+    assert summary["eligibility_counts"]["undetermined"] > 0
+    assert summary["missing_observations"][0]["missing_observations"] == ["soh"]
+    assert summary["missing_values"] > 0
+    assert summary["plan"] is None
+    impossible = run(replace(scenario, co2_floor_kg=1e12), "integrated")
+    assert impossible["status"] == "Infeasible"
+    assert snapshot_summary(scenario, impossible)["plan"] is None
+    assert snapshot_summary(scenario)["eligibility_counts"] is None
