@@ -76,7 +76,7 @@ def configure(scenario):
     generation = st.session_state.get("config_generation", 0)
     st.subheader("Set the rules and limits for this scenario")
     st.caption("Edit a draft, then apply it to the shared scenario. Leaving this page discards unapplied edits.")
-    with st.container(border=True):
+    with st.container(border=True, key="configuration_scenario"):
         st.subheader("Scenario")
         uploaded = None if SYNTHETIC_CLOUD else st.file_uploader("Load a complete scenario JSON", type="json", key=f"config_upload_{generation}")
         base = (scenario_from_json(uploaded.getvalue().decode("utf-8-sig")) if uploaded else
@@ -112,7 +112,7 @@ def configure(scenario):
     st.subheader("Destinations")
     with st.container():
         for d in base.destinations:
-            with st.container(border=True):
+            with st.container(border=True, key=f"configuration_destination_{d.pathway_id}"):
                 key = f"{base_key}_{d.pathway_id}"
                 st.subheader(d.name)
                 entry, limits = st.columns(2)
@@ -134,7 +134,7 @@ def configure(scenario):
                                             capacity=capacity if bounded else None))
     resources = []
     st.subheader("Shared constraints")
-    with st.container(border=True):
+    with st.container(border=True, key="configuration_resources"):
         for resource in base.resources:
             capacity = st.number_input(f"{resource.name} ({resource.unit})", min_value=0.0,
                                        value=float(resource.capacity), key=f"res_{base_key}_{resource.resource_id}")
@@ -145,7 +145,7 @@ def configure(scenario):
                        destinations=tuple(destinations), resources=tuple(resources), demand_limits=demand,
                        co2_floor_kg=floor if floor_on else None)
     st.subheader("Review & apply")
-    with st.container(border=True):
+    with st.container(border=True, key="configuration_review"):
         changes = configuration_changes(plain(scenario), plain(candidate))
         if changes:
             st.caption("Unapplied changes. Existing results still refer to the applied scenario.")
@@ -297,11 +297,11 @@ def overview(scenario):
     st.caption("For OEM disposition planners and teams evaluating second-life and recycling options.")
     capability_cards()
     left, right = st.columns(2)
-    with left, st.container(border=True):
+    with left, st.container(border=True, key="about_plan"):
         st.subheader("Bring a decision. Leave with a plan.")
         st.write("Define destination requirements and operational limits. Assess available options, allocate batteries and compare alternative scenarios.")
         st.write("Review battery-level assignments, eligibility explanations and the economic and emissions assessments behind the result. Export the complete decision record for discussion.")
-    with right, st.container(border=True):
+    with right, st.container(border=True, key="about_questions"):
         st.subheader("Start with your planning question")
         st.write("Which batteries meet an entry requirement? Where does scarce repurposing capacity add the most assessed value? How does the plan change when capacity or demand changes?")
         st.write("Use each capability separately or together. Shared inputs and traceable evidence connect the decisions.")

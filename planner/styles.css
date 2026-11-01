@@ -248,3 +248,34 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
   .central-counts { gap:.5rem; }
   [data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review) { padding:1rem !important; }
 }
+
+/* Section cards have a clearer boundary than the controls and tables inside. */
+[data-testid="stMain"] {
+  --dss-card-border:#bcc9c1;
+  --dss-card-shadow:0 2px 6px rgb(34 59 48 / 5%);
+}
+[data-testid="stMain"] :is(
+  .st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review,
+  [class*="st-key-configuration_"], [class*="st-key-capability_"], [class*="st-key-question_option_"],
+  .st-key-decision_card, .st-key-about_plan, .st-key-about_questions, .about-intro
+) {
+  border:1px solid var(--dss-card-border) !important;
+  border-radius:10px; box-shadow:var(--dss-card-shadow);
+}
+[data-testid="stMain"] :is([data-testid="stMetric"], .allocation-chart) {
+  border-color:var(--dss-card-border); box-shadow:var(--dss-card-shadow);
+}
+[data-testid="stMain"] :is([class*="st-key-question_selected_"], .st-key-integrated_selected) {
+  box-shadow:var(--dss-card-shadow);
+}
+[data-testid="stMain"] section.about-intro { box-shadow:var(--dss-card-shadow); }
+[data-testid="stMain"] [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) {
+  border-color:var(--dss-card-border); box-shadow:var(--dss-card-shadow);
+}
+/* Supporting details stay quiet within the four main dashboard cards. */
+[data-testid="stMain"] .st-key-central_management [data-testid="stMetric"] {
+  border-color:#dfe4e1; box-shadow:none;
+}
+[data-testid="stMain"] .st-key-central_planning .allocation-chart { box-shadow:none; }
+[data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review, .st-key-decision_card)
+  [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) { border-color:#dfe4e1; box-shadow:none; }
