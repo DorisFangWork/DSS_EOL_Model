@@ -41,8 +41,8 @@ def snapshot_summary(scenario, result=None):
 
 def _counts(items):
     st.markdown('<div class="central-counts">' + ''.join(
-        f'<div><strong>{html.escape(str(value))}</strong><span>{html.escape(label)}</span></div>'
-        for label, value in items) + '</div>', unsafe_allow_html=True)
+        f'<div class="count-{tone}"><strong>{html.escape(str(value))}</strong><span>{html.escape(label)}</span></div>'
+        for label, value, tone in items) + '</div>', unsafe_allow_html=True)
 
 
 def _run_label(result, mode_label):
@@ -76,8 +76,10 @@ def technical_section(summary, *, table, go):
     if counts is None:
         st.info("Eligibility has not been assessed in this view.")
     else:
-        _counts([("Eligible options", counts["eligible"]), ("Ineligible options", counts["ineligible"]),
-                 ("Undetermined options", counts["undetermined"])])
+        _counts([("Eligible options", counts["eligible"], "eligible"),
+                 ("Ineligible options", counts["ineligible"], "neutral"),
+                 ("Undetermined options", counts["undetermined"],
+                  "attention" if counts["undetermined"] else "neutral")])
         st.caption(f"Battery–destination pairs · {summary['confirmed_packs']} of {len(summary['scenario']['batteries'])} packs have at least one confirmed eligible destination.")
         if counts["undetermined"]:
             st.warning(f"{counts['undetermined']} options need more information.")
@@ -109,6 +111,7 @@ def management_section(summary, history, *, go, mode_label):
     if not plan:
         st.info("Economic and emissions outcomes will appear for a certified allocation.")
     else:
+        outcomes = st.container(key="dashboard_outcomes")
         alternatives = {r["run_id"]: r for r in history if r["run_id"] != result["run_id"]
                         and r.get("evaluation") and r["evaluation"]["feasible"] and r.get("allocation")}
         differences = {}
@@ -129,12 +132,13 @@ def management_section(summary, history, *, go, mode_label):
                         with st.expander("What differs from the baseline"):
                             st.write({"scenario_fields": comparison["changed_scenario_fields"],
                                       "analysis_fields": comparison["changed_run_fields"]})
-        economic, emissions = st.columns(2)
-        for column, key, label in [(economic, "economic_objective", f"Economic objective ({summary['scenario']['currency']})"),
-                                   (emissions, "avoided_co2_kg", "Assessed avoided emissions (kg CO2e)")]:
-            delta = f"{differences[key]:+,.2f}" if key in differences else None
-            column.metric(label, f"{plan[key]:,.2f}", delta=delta, delta_color="off")
-        st.caption(f"{plan['details']['deferred_count']} deferred packs · Economic value includes current-period deferral costs.")
+        with outcomes:
+            economic, emissions = st.columns(2)
+            for column, key, label in [(economic, "economic_objective", f"Economic objective ({summary['scenario']['currency']})"),
+                                       (emissions, "avoided_co2_kg", "Assessed avoided emissions (kg CO2e)")]:
+                delta = f"{differences[key]:+,.2f}" if key in differences else None
+                column.metric(label, f"{plan[key]:,.2f}", delta=delta, delta_color="off")
+            st.caption(f"{plan['details']['deferred_count']} deferred packs · Economic value includes current-period deferral costs.")
         st.caption("Modelled initial disposition outcomes; delivered service and material recovery are not calculated.")
     st.button("Open results & comparison", key="central_compare", on_click=go, args=("Results & comparison",))
 
@@ -160,9 +164,11 @@ def review_section(summary, *, table, go, review_run, mode_label):
                 st.write("• " + assumption)
             st.json({"scenario_fingerprint": result["scenario_fingerprint"], "implementation": result["implementation"],
                      "eligibility_origin": result["eligibility_origin"], "unknown_policy": result["unknown_policy"]})
-        st.button("Review selected results", key="review_latest", on_click=review_run, args=(result["run_id"],))
-        st.download_button("Download selected analysis", json.dumps(result, indent=2, allow_nan=False),
-                           "dss_run.json", "application/json", key="central_download")
+        review, download = st.columns(2)
+        review.button("Review selected results", key="review_latest", on_click=review_run,
+                      args=(result["run_id"],), width="stretch")
+        download.download_button("Download analysis", json.dumps(result, indent=2, allow_nan=False),
+                                 "dss_run.json", "application/json", key="central_download", width="stretch")
     else:
         st.info("Run an analysis to inspect its evidence, model checks and input snapshot.")
     st.button("Review model scope", key="central_model", on_click=go, args=("Model & assumptions",))
@@ -176,27 +182,28 @@ def render_dashboard(scenario, history, *, go, review_run, table, allocation_cha
         st.caption("One view of disposition planning, technical assessment, management and review.")
     action.button("Assess and plan together", key="workflow_integrated", on_click=go,
                   args=("Decision workspace", "Integrated decision"), width="stretch")
-    result = None
-    if history:
-        lookup = {r["run_id"]: r for r in history}
-        if st.session_state.get("selected_run") not in lookup:
-            st.session_state["selected_run"] = history[-1]["run_id"]
-        selected = st.selectbox("Analysis snapshot", list(lookup), key="selected_run", persist_state="session",
-                                format_func=lambda key: _run_label(lookup[key], mode_label))
-        result = lookup[selected]
-        if current_basis(result, scenario):
-            st.caption("Current inputs · All four sections use this selected analysis.")
+    with st.container(border=True, key="dashboard_context"):
+        result = None
+        if history:
+            lookup = {r["run_id"]: r for r in history}
+            if st.session_state.get("selected_run") not in lookup:
+                st.session_state["selected_run"] = history[-1]["run_id"]
+            selected = st.selectbox("Analysis snapshot", list(lookup), key="selected_run", persist_state="session",
+                                    format_func=lambda key: _run_label(lookup[key], mode_label))
+            result = lookup[selected]
+            if current_basis(result, scenario):
+                st.caption("Current inputs · All four sections use this selected analysis.")
+            else:
+                st.warning("Historical snapshot: this analysis uses an earlier scenario or model version. All four sections show its saved inputs and results; the toolbar shows the currently applied scenario.")
         else:
-            st.warning("Historical snapshot: this analysis uses an earlier scenario or model version. All four sections show its saved inputs and results; the toolbar shows the currently applied scenario.")
-    else:
-        st.caption("Applied scenario · No completed analysis yet. Choose any capability to begin.")
-    summary = snapshot_summary(scenario, result)
-    basis = summary["scenario"]
-    st.markdown('<div class="context-strip">' + ''.join(
-        f'<span><strong>{value}</strong> {label}</span>' for value, label in [
-            (len(basis["batteries"]), "battery packs"), (len(basis["destinations"]), "destinations"),
-            (len(basis["resources"]), "shared resources"), (len(history), "session analyses")]) + '</div>', unsafe_allow_html=True)
-    st.caption(f"Decision owner: {basis['decision_maker']} · {basis['horizon']}")
+            st.caption("Applied scenario · No completed analysis yet. Choose any capability to begin.")
+        summary = snapshot_summary(scenario, result)
+        basis = summary["scenario"]
+        st.markdown('<div class="context-strip">' + ''.join(
+            f'<span><strong>{value}</strong> {label}</span>' for value, label in [
+                (len(basis["batteries"]), "battery packs"), (len(basis["destinations"]), "destinations"),
+                (len(basis["resources"]), "shared resources"), (len(history), "session analyses")]) + '</div>', unsafe_allow_html=True)
+        st.caption(f"Decision owner: {basis['decision_maker']} · {basis['horizon']}")
     planning, technical = st.columns(2, gap="medium")
     with planning, st.container(border=True, key="central_planning", height="stretch"):
         planning_section(summary, table=table, allocation_chart=allocation_chart, go=go)

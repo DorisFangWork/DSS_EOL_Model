@@ -231,12 +231,12 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 /* Four perspectives over the same selected decision record. */
 [data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review) {
   padding:1.25rem !important; border:1px solid #dfe4e1 !important;
-  border-radius:10px; background:#fff; height:100%; gap:.9rem !important;
+  border-radius:10px; background:#fff; height:100%; gap:.65rem !important;
 }
 [data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review) h3 {
   font-size:1.2rem !important; letter-spacing:-.01em;
 }
-.central-counts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.8rem; padding:.6rem 0; }
+.central-counts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.8rem; padding:.5rem 0; }
 .central-counts strong { display:block; font-size:1.7rem; color:#344e41; font-variant-numeric:tabular-nums; }
 .central-counts span { display:block; font-size:.95rem; color:#52604f; line-height:1.45; }
 .st-key-central_planning .allocation-chart { border:0; padding:0; margin:0; }
@@ -274,8 +274,32 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 }
 /* Supporting details stay quiet within the four main dashboard cards. */
 [data-testid="stMain"] .st-key-central_management [data-testid="stMetric"] {
-  border-color:#dfe4e1; box-shadow:none;
+  border:0; background:#f2f6f3; box-shadow:none; padding:.8rem;
 }
 [data-testid="stMain"] .st-key-central_planning .allocation-chart { box-shadow:none; }
 [data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review, .st-key-decision_card)
   [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) { border-color:#dfe4e1; box-shadow:none; }
+
+/* Selected snapshot context is distinct from the applied-scenario toolbar. */
+[data-testid="stMain"] .st-key-dashboard_context {
+  padding:.9rem 1.1rem !important; gap:.45rem !important;
+  background:#f5f7f5 !important; border:1px solid #dfe4e1 !important; border-radius:10px;
+}
+.st-key-dashboard_context .context-strip { padding:.35rem 0; gap:.4rem 1.4rem; }
+.st-key-dashboard_context [data-testid="stCaptionContainer"] p { margin:0; font-size:.9rem; line-height:1.5; }
+.st-key-dashboard_context [data-testid="stWidgetLabel"] p { font-weight:600; }
+
+/* Equal-weight perspectives, with findings more prominent than supporting notes. */
+[data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review)
+  [data-testid="stCaptionContainer"] p { font-size:.9rem; line-height:1.5; }
+[data-testid="stMain"] .st-key-central_planning h3#planned-disposition {
+  font-size:.9rem !important; font-weight:500; color:#52604f; padding-block:.15rem;
+}
+.central-counts .count-neutral strong { color:#52604f; }
+.central-counts .count-attention { border-left:3px solid #a87018; padding-left:.65rem; }
+.central-counts .count-attention strong { color:#8a570f; }
+[data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review)
+  .dss-table th { background:#f2f5f2; color:#344e41; border-bottom:1px solid #cbd5ce; }
+.st-key-central_review .dss-table td:last-child { font-weight:600; }
+[data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review)
+  [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) { background:#f5f7f5; }
