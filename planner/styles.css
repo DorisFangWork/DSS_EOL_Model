@@ -303,3 +303,63 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 .st-key-central_review .dss-table td:last-child { font-weight:600; }
 [data-testid="stMain"] :is(.st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review)
   [data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) { background:#f5f7f5; }
+
+/* Shared hierarchy and supporting surfaces throughout the planner. */
+[data-testid="stSidebar"][data-collapsed="true"] { width:0 !important; min-width:0 !important; max-width:0 !important; overflow:hidden; }
+[data-testid="stMain"] .dss-table th {
+  background:#f2f5f2; color:#344e41; border-bottom:1px solid #cbd5ce;
+}
+.st-key-page_results_comparison .dss-table, .st-key-model_values .dss-table { min-width:560px; }
+[class*="st-key-page_"] [data-testid="stCaptionContainer"] p { font-size:.9rem; line-height:1.5; }
+[data-testid="stMain"] :is(.st-key-results_context, .st-key-comparison_context) {
+  padding:.9rem 1.1rem !important; gap:.45rem !important;
+  background:#f5f7f5 !important; border:1px solid #dfe4e1 !important; border-radius:10px;
+}
+:is(.st-key-results_context, .st-key-comparison_context) [data-testid="stWidgetLabel"] p { font-weight:600; }
+[data-testid="stMain"] .st-key-page_results_comparison [data-testid="stMetric"] {
+  background:#f2f6f3; border:0; box-shadow:none;
+}
+.run-meta { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem .8rem; font-size:.9rem; color:#52604f; }
+[data-testid="stMain"] .result-status.state-complete { background:#e7f1eb; border-color:#c4d9cb; color:#27543e; }
+[data-testid="stMain"] .result-status.state-attention { background:#f9efdd; border-color:#e6d1ac; color:#85540c; }
+.st-key-result_eligibility_ineligible [data-testid="stMetricValue"],
+.st-key-result_eligibility_undetermined [data-testid="stMetricValue"] { color:#52604f; }
+[data-testid="stMain"] .st-key-result_eligibility_undetermined_attention [data-testid="stMetric"] {
+  background:#fbf3e6; border-left:3px solid #a87018;
+}
+.st-key-result_eligibility_undetermined_attention [data-testid="stMetricValue"] { color:#8a570f; }
+
+/* Choice cards stay compact so selected settings receive more of the screen. */
+[data-testid="stMain"] .st-key-page_decision_workspace :is([class*="st-key-question_option_"], [class*="st-key-question_selected_"]) {
+  padding:1rem !important; gap:.7rem !important;
+}
+.st-key-page_decision_workspace .question-copy { grid-template-rows:auto minmax(3.6rem,auto); gap:.5rem; }
+.st-key-page_decision_workspace .question-copy h3 { font-size:1.2rem !important; }
+.st-key-page_decision_workspace .question-label { font-size:.85rem; }
+[data-testid="stMain"] .st-key-decision_card { gap:.7rem !important; }
+
+/* Configuration and model notes use the same section rhythm as the dashboard. */
+[data-testid="stMain"] :is([class*="st-key-configuration_"], [class*="st-key-model_"], .st-key-about_plan, .st-key-about_questions) {
+  padding:1.25rem !important; gap:.7rem !important;
+}
+[data-testid="stMain"] [class*="st-key-model_"] {
+  border:1px solid var(--dss-card-border) !important; border-radius:10px; background:#fff;
+}
+[data-testid="stMain"] :is(.st-key-model_scope, section.about-intro) { background:#f5f7f5; }
+[class*="st-key-configuration_destination_"] [data-testid="stCaptionContainer"] p {
+  font-size:.8rem; font-weight:600; letter-spacing:.06em;
+}
+.st-key-draft_notice { background:#fbf3e6; border-left:3px solid #a87018; padding:.6rem .8rem; border-radius:5px; }
+.st-key-applied_notice { background:#f5f7f5; padding:.6rem .8rem; border-radius:5px; }
+.st-key-page_overview .capability-copy { grid-template-rows:auto minmax(3.2rem,auto) minmax(5rem,auto); gap:.6rem; }
+@media(min-width:768px) {
+  [class*="st-key-configuration_destination_"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] + [data-testid="stColumn"] {
+    border-left:1px solid #dfe4e1; padding-left:1rem;
+  }
+}
+@media(max-width:700px) {
+  .st-key-page_decision_workspace .question-copy, .st-key-page_overview .capability-copy { grid-template-rows:auto; }
+  .st-key-page_overview .product-paths { flex-direction:column; align-items:stretch; gap:.5rem; text-align:center; }
+  .st-key-page_overview .product-paths > b { align-self:center; transform:rotate(90deg); line-height:1; }
+  [data-testid="stMain"] :is([class*="st-key-configuration_"], [class*="st-key-model_"], .st-key-about_plan, .st-key-about_questions) { padding:1rem !important; }
+}

@@ -148,10 +148,12 @@ def configure(scenario):
     with st.container(border=True, key="configuration_review"):
         changes = configuration_changes(plain(scenario), plain(candidate))
         if changes:
-            st.caption("Unapplied changes. Existing results still refer to the applied scenario.")
+            with st.container(key="draft_notice"):
+                st.caption("Unapplied changes. Existing results still refer to the applied scenario.")
             table(changes)
         else:
-            st.caption("All settings match the applied scenario.")
+            with st.container(key="applied_notice"):
+                st.caption("All settings match the applied scenario.")
         apply, discard = st.columns(2)
         if apply.button("Apply configuration", type="primary", key="apply", disabled=not changes):
             st.session_state["scenario"] = candidate
@@ -167,8 +169,11 @@ def show_result(result):
     title, export = st.columns([3, 1])
     title.subheader(mode_label(result["mode"]))
     export.download_button("Download complete run", json.dumps(result, indent=2, allow_nan=False), "dss_run.json", "application/json", width="stretch")
-    st.markdown(f'<span class="result-status">{html.escape(result["status"].title())}</span>', unsafe_allow_html=True)
-    st.caption(f"Run {result['run_id'][:8]} · Scenario version {result['scenario']['version']} · Status: {result['status']}")
+    tone = "complete" if result["status"].casefold() in {"optimal", "completed"} else "attention"
+    st.markdown(f'<div class="run-meta"><span class="result-status state-{tone}">'
+                f'{html.escape(result["status"].title())}</span><span>'
+                f'Run {html.escape(result["run_id"][:8])} · Scenario version {result["scenario"]["version"]}'
+                '</span></div>', unsafe_allow_html=True)
     report = result["evaluation"]
     if report:
         counts = report["details"]["pathway_counts"]
@@ -186,7 +191,10 @@ def show_result(result):
     else:
         st.success("Assessment complete. Review the battery–destination evidence below.")
         for column, status in zip(st.columns(3), ("eligible", "ineligible", "undetermined")):
-            column.metric(status.title() + " options", sum(r["status"] == status for r in result["eligibility"]))
+            count = sum(r["status"] == status for r in result["eligibility"])
+            emphasis = "_attention" if status == "undetermined" and count else ""
+            with column, st.container(key=f"result_eligibility_{status}{emphasis}"):
+                st.metric(status.title() + " options", count)
         st.caption("Counts refer to battery–destination pairs, not unique batteries.")
     selected_asset = st.selectbox("Inspect a battery", ["All batteries"] + [b["asset_id"] for b in result["scenario"]["batteries"]], key=f"inspect_{result['run_id']}")
     def filtered(rows):
@@ -419,9 +427,10 @@ def compare_view(history):
     def label(key):
         r = lookup[key]
         return f"{r['scenario']['scenario_id']} v{r['scenario']['version']} · {mode_label(r['mode'])} · {key[:8]}"
-    left, right = st.columns(2)
-    first_id = left.selectbox("Baseline run", list(lookup), format_func=label, key="baseline_run", persist_state="session")
-    second_id = right.selectbox("Alternative run", list(lookup), index=len(lookup) - 1, format_func=label, key="alternative_run", persist_state="session")
+    with st.container(border=True, key="comparison_context"):
+        left, right = st.columns(2)
+        first_id = left.selectbox("Baseline run", list(lookup), format_func=label, key="baseline_run", persist_state="session")
+        second_id = right.selectbox("Alternative run", list(lookup), index=len(lookup) - 1, format_func=label, key="alternative_run", persist_state="session")
     first, second = lookup[first_id], lookup[second_id]
     if first_id == second_id:
         st.info("Select two different runs to compare.")
@@ -438,8 +447,9 @@ def compare_view(history):
         st.warning("Numeric outcome comparison requires two evaluated allocations with matching currency and planning horizon.")
     st.subheader("What changed")
     changed = comparison["changed_scenario_fields"]
-    table([{"scenario_field": key, "baseline": json.dumps(first["scenario"].get(key), ensure_ascii=False), "alternative": json.dumps(second["scenario"].get(key), ensure_ascii=False)} for key in changed])
-    st.caption("Changed analysis settings: " + (", ".join(comparison["changed_run_fields"]) or "None"))
+    with st.expander("Scenario input differences"):
+        table([{"scenario_field": key, "baseline": json.dumps(first["scenario"].get(key), ensure_ascii=False), "alternative": json.dumps(second["scenario"].get(key), ensure_ascii=False)} for key in changed])
+        st.caption("Changed analysis settings: " + (", ".join(comparison["changed_run_fields"]) or "None"))
     if first.get("allocation") and second.get("allocation"):
         a, b = first["allocation"]["assignments"], second["allocation"]["assignments"]
         if set(a) != set(b):
@@ -460,10 +470,11 @@ def results_page(scenario):
         result_tab, compare_tab = st.tabs(["Analysis results", "Compare scenarios"])
         with result_tab:
             lookup = {r["run_id"]: r for r in history}
-            selected = st.selectbox("Analysis run", list(lookup), format_func=lambda key: f"{lookup[key]['scenario']['scenario_id']} · {mode_label(lookup[key]['mode'])} · {key[:8]}", key="selected_run", persist_state="session")
-            result = lookup[selected]
-            if not current_basis(result, scenario):
-                st.warning("Inputs have changed or model code was updated. This is a historical snapshot, not a recommendation for the active scenario.")
+            with st.container(border=True, key="results_context"):
+                selected = st.selectbox("Analysis run", list(lookup), format_func=lambda key: f"{lookup[key]['scenario']['scenario_id']} · {mode_label(lookup[key]['mode'])} · {key[:8]}", key="selected_run", persist_state="session")
+                result = lookup[selected]
+                if not current_basis(result, scenario):
+                    st.warning("Inputs have changed or model code was updated. This is a historical snapshot, not a recommendation for the active scenario.")
             show_result(result)
         with compare_tab:
             compare_view(history)
@@ -488,18 +499,21 @@ def saved_history():
 
 
 def assumptions(scenario):
-    st.subheader("Understand the model and its limits")
-    st.write("The DSS is an industry-oriented product prototype. Validated research can strengthen its modular capabilities.")
-    st.write("Allocation engine: Model 0 — deterministic, one-period economic optimisation, with admissibility, demand and shared-resource constraints.")
-    st.info("Results are planned initial disposition decisions. Delivered service, subsequent qualification, material recovery and credited supply are outside this model's current calculations.")
-    st.subheader("Source scenario notes")
-    st.caption("These notes describe the original example. Applied configuration and saved run snapshots define the current planning case.")
-    st.write(scenario.source)
-    for assumption in scenario.assumptions:
-        st.write("• " + assumption)
-    st.subheader("Assessment values")
-    st.caption(f"Economic values in {scenario.currency}; avoided emissions in kg CO2e. These inputs are distinct from operational capacity and entry requirements.")
-    table(plain(scenario.values))
+    with st.container(border=True, key="model_scope"):
+        st.subheader("Understand the model and its limits")
+        st.write("The DSS is an industry-oriented product prototype. Validated research can strengthen its modular capabilities.")
+        st.write("Allocation engine: Model 0 — deterministic, one-period economic optimisation, with admissibility, demand and shared-resource constraints.")
+        st.info("Results are planned initial disposition decisions. Delivered service, subsequent qualification, material recovery and credited supply are outside this model's current calculations.")
+    with st.container(border=True, key="model_sources"):
+        st.subheader("Source scenario notes")
+        st.caption("These notes describe the original example. Applied configuration and saved run snapshots define the current planning case.")
+        st.write(scenario.source)
+        for assumption in scenario.assumptions:
+            st.write("• " + assumption)
+    with st.container(border=True, key="model_values"):
+        st.subheader("Assessment values")
+        st.caption(f"Economic values in {scenario.currency}; avoided emissions in kg CO2e. These inputs are distinct from operational capacity and entry requirements.")
+        table(plain(scenario.values))
     with st.expander("Implementation and provenance"):
         st.json(implementation_record())
 
@@ -547,7 +561,8 @@ st.title("About the DSS" if page == "Overview" else page)
 if "notice" in st.session_state:
     st.success(st.session_state.pop("notice"))
 try:
-    {"Overview": overview, "Dashboard": dashboard, "Decision workspace": workspace, "Configuration": configure,
-     "Results & comparison": results_page, "Model & assumptions": assumptions}[page](scenario)
+    with st.container(key="page_" + page.casefold().replace(" & ", "_").replace(" ", "_")):
+        {"Overview": overview, "Dashboard": dashboard, "Decision workspace": workspace, "Configuration": configure,
+         "Results & comparison": results_page, "Model & assumptions": assumptions}[page](scenario)
 except (ValueError, TypeError, KeyError, UnicodeDecodeError) as error:
     st.error(f"Input needs attention: {error}")
