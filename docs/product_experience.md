@@ -44,4 +44,6 @@ The current private cloud preview uses synthetic inputs and session-only history
 
 ## Visual direction
 
-The application structure follows Streamlit's management-interface pattern: persistent navigation, a compact header and a task-focused main workspace. The navy-and-white palette and typography borrow the visual language of the Wix Business Consulting Company template (2852). The implementation retains Streamlit, uses original product copy and code-native visual treatment, and does not copy Wix assets or introduce a Wix dependency.
+The application is a planning console with persistent navigation, a compact scenario toolbar and task-focused pages. Main pages use a white background, forest-green headings and actions, Aptos with local-device fallbacks, and consistent outlined cards. The established left menu remains unchanged.
+
+Visual hierarchy distinguishes page titles, decision questions and section titles, key findings, and supporting notes. Metrics use large figures with smaller explicit labels and units; card padding and section spacing follow a shared scale. Context selectors are grouped separately from findings. Amber indicates information requiring attention, rather than a preferred economic or environmental outcome. Capability cards have equal weight and never imply a mandatory sequence.

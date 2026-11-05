@@ -283,7 +283,7 @@ def capability_cards(compact=False):
         ("Allocation planning", "Fleet & constraints", "Distribute batteries across destinations within demand and shared capacity limits."),
     ]
     for column, (name, label, description) in zip(st.columns(3), descriptions):
-        with column, st.container(border=True, key=f"capability_{MODES[name]}"):
+        with column, st.container(border=True, key=f"capability_{MODES[name]}", height="stretch"):
             symbol = {"admission": "✓", "destination": "⇄", "allocation": "▥"}[MODES[name]]
             st.markdown(f'<div class="capability-copy{" compact" if compact else ""}">'
                         f'<div class="eyebrow"><span class="capability-icon" aria-hidden="true">{symbol}</span>{html.escape(label)}</div>'
