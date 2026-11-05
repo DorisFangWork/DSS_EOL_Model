@@ -82,9 +82,9 @@ def technical_section(summary, *, table, go):
                   "attention" if counts["undetermined"] else "neutral")])
         st.caption(f"Battery–destination pairs · {summary['confirmed_packs']} of {len(summary['scenario']['batteries'])} packs have at least one confirmed eligible destination.")
         if counts["undetermined"]:
-            st.warning(f"{counts['undetermined']} options need more information.")
+            st.warning(f"**Missing evidence for {counts['undetermined']} option{'s' if counts['undetermined'] != 1 else ''}.** Review the missing evidence below.")
         if summary["missing_values"]:
-            st.warning(f"{summary['missing_values']} eligible options lack value assessments for comparison or allocation.")
+            st.warning(f"**Value assessments missing for {summary['missing_values']} eligible option{'s' if summary['missing_values'] != 1 else ''}** for comparison or allocation.")
         with st.expander("Unmet requirements and missing information"):
             issues = [r for r in result["eligibility"] if r["status"] != "eligible"]
             if issues:
@@ -96,7 +96,7 @@ def technical_section(summary, *, table, go):
                 st.caption("Missing pack observations required by Model 0")
                 table(summary["missing_observations"])
     if counts is None and summary["missing_observations"]:
-        st.caption(f"{len(summary['missing_observations'])} packs have missing observations required by Model 0.")
+        st.warning(f"**Missing observations for {len(summary['missing_observations'])} pack{'s' if len(summary['missing_observations']) != 1 else ''}** required by Model 0.")
     left, right = st.columns(2)
     left.button("Assess eligibility", key="open_admission", on_click=go,
                 args=("Decision workspace", "Battery admissibility"), width="stretch")
@@ -138,7 +138,12 @@ def management_section(summary, history, *, go, mode_label):
                                        (emissions, "avoided_co2_kg", "Assessed avoided emissions (kg CO2e)")]:
                 delta = f"{differences[key]:+,.2f}" if key in differences else None
                 column.metric(label, f"{plan[key]:,.2f}", delta=delta, delta_color="off")
-            st.caption(f"{plan['details']['deferred_count']} deferred packs · Economic value includes current-period deferral costs.")
+            deferred = plan['details']['deferred_count']
+            if deferred:
+                with st.container(key="dashboard_deferrals_attention"):
+                    st.markdown(f"**{deferred} deferred pack{'s' if deferred != 1 else ''}** · Review the allocation details. Economic value includes current-period deferral costs.")
+            else:
+                st.caption("0 deferred packs · Economic value includes current-period deferral costs.")
         st.caption("Modelled initial disposition outcomes; delivered service and material recovery are not calculated.")
     st.button("Open results & comparison", key="central_compare", on_click=go, args=("Results & comparison",))
 
@@ -155,7 +160,11 @@ def review_section(summary, *, table, go, review_run, mode_label):
                        ("Independent feasibility", "Verified" if summary["plan"] else "No verified allocation")]
         else:
             checks.append(("Allocation checks", "Not applicable to this assessment"))
-        table([{"check": name, "outcome": value} for name, value in checks])
+        check_state = "assessment"
+        if solver:
+            check_state = "verified" if solver.get("exact_certificate") and summary["plan"] else "attention"
+        with st.container(key=f"dashboard_checks_{check_state}"):
+            table([{"check": name, "outcome": value} for name, value in checks])
         recorded = datetime.fromisoformat(result["recorded_at_utc"]).astimezone(timezone.utc).strftime("%d %b %Y · %H:%M UTC")
         st.caption(f"{mode_label(result['mode'])} · Run {result['run_id'][:8]} · {recorded}")
         with st.expander("Evidence and provenance"):
@@ -194,7 +203,7 @@ def render_dashboard(scenario, history, *, go, review_run, table, allocation_cha
             if current_basis(result, scenario):
                 st.caption("Current inputs · All four sections use this selected analysis.")
             else:
-                st.warning("Historical snapshot: this analysis uses an earlier scenario or model version. All four sections show its saved inputs and results; the toolbar shows the currently applied scenario.")
+                st.warning("**Historical snapshot:** this analysis uses an earlier scenario or model version. All four sections show its saved inputs and results; the toolbar shows the currently applied scenario.")
         else:
             st.caption("Applied scenario · No completed analysis yet. Choose any capability to begin.")
         summary = snapshot_summary(scenario, result)
