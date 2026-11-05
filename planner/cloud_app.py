@@ -1,5 +1,6 @@
 """Community Cloud entry point: synthetic inputs and session/download outputs only.
 
+Loads the shared planning console and its Central Decision-maker dashboard.
 Access control is configured separately in Streamlit Community Cloud Sharing.
 """
 
