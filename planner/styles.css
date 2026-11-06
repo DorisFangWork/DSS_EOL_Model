@@ -484,3 +484,36 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
   [data-testid="stMain"] .st-key-page_dashboard .central-counts { gap:.5rem; }
   [data-testid="stMain"] .st-key-page_dashboard .central-counts > div { padding:.7rem .5rem; }
 }
+
+/* Results use the dashboard's figure hierarchy and evidence-review cues. */
+[data-testid="stMain"] .st-key-page_results_comparison [data-testid="stMetric"] {
+  background:#f2f6f3; border:1px solid #bcc9c1; border-top:3px solid #344e41;
+  padding:.9rem .85rem; container-type:inline-size;
+}
+[data-testid="stMain"] .st-key-page_results_comparison [data-testid="stMetricValue"] {
+  font-size:2rem; font-size:clamp(1.25rem,19.5cqw,2.15rem); font-weight:750; color:#234b39;
+}
+[data-testid="stMain"] .st-key-page_results_comparison :is(
+  .st-key-result_deferred,.st-key-result_eligibility_ineligible,.st-key-result_eligibility_undetermined
+) [data-testid="stMetric"] { background:#fff; border:1px solid #dfe4e1; }
+[data-testid="stMain"] .st-key-page_results_comparison :is(
+  .st-key-result_deferred,.st-key-result_eligibility_ineligible,.st-key-result_eligibility_undetermined
+) [data-testid="stMetricValue"] { color:#52604f; }
+[data-testid="stMain"] .st-key-page_results_comparison :is(
+  .st-key-result_deferred_attention,.st-key-result_eligibility_undetermined_attention
+) [data-testid="stMetric"] { background:#fbf3e6; border:1px solid #dfc28e; border-top:3px solid #a87018; }
+[data-testid="stMain"] .st-key-page_results_comparison :is(
+  .st-key-result_deferred_attention,.st-key-result_eligibility_undetermined_attention
+) :is([data-testid="stMetricValue"],[data-testid="stMetricLabel"] p) { color:#85540c; }
+[data-testid="stMain"] .st-key-page_results_comparison [data-testid="stAlertContainer"]:has([data-testid="stAlertContentWarning"]) {
+  background:#fbf3e6; border:1px solid #dfc28e; border-left:4px solid #a87018; border-radius:8px;
+  padding:.85rem 1rem; box-shadow:none;
+}
+[data-testid="stMain"] .st-key-page_results_comparison [data-testid="stAlertContentWarning"] { color:#70460c; }
+[data-testid="stMain"] .st-key-page_results_comparison .dss-table tr.needs-review td { background:#fbf3e6; }
+[data-testid="stMain"] .st-key-page_results_comparison .dss-table tr.needs-review td:first-child { border-left:4px solid #a87018; }
+[data-testid="stMain"] .st-key-comparison_differences .dss-table td:last-child { color:#234b39; font-weight:700; }
+[data-testid="stMain"] .st-key-page_results_comparison .allocation-row strong { font-size:1.1rem; font-weight:750; color:#234b39; }
+[data-testid="stMain"] .st-key-page_results_comparison [data-testid="stMetricDelta"] { font-weight:650; }
+[data-testid="stMain"] .st-key-page_results_comparison button [data-testid="stMarkdownContainer"],
+[data-testid="stMain"] .st-key-page_results_comparison button p { white-space:normal; overflow:visible; text-overflow:clip; }

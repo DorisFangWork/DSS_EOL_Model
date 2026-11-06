@@ -30,7 +30,7 @@ st.set_page_config(page_title="Battery disposition DSS", page_icon="🔋", layou
 st.markdown('<style>' + (Path(__file__).with_name("styles.css")).read_text(encoding="utf-8") + '</style>', unsafe_allow_html=True)
 
 
-def table(rows):
+def table(rows, *, attention=None):
     """Escaped HTML keeps tables usable without Arrow-based dataframe rendering."""
     rows = list(rows)
     if not rows:
@@ -46,7 +46,9 @@ def table(rows):
             value = f"{value:,.4f}".rstrip("0").rstrip(".")
         return html.escape(str(value))
     header = "".join(f"<th>{cell(k.replace('_', ' '))}</th>" for k in keys)
-    body = "".join("<tr>" + "".join(f'<td class="{"numeric" if isinstance(row.get(k), (int, float)) and not isinstance(row.get(k), bool) else ""}">{cell(row.get(k))}</td>' for k in keys) + "</tr>" for row in rows[:300])
+    body = "".join(('<tr class="needs-review">' if attention and attention(row) else '<tr>')
+                   + "".join(f'<td class="{"numeric" if isinstance(row.get(k), (int, float)) and not isinstance(row.get(k), bool) else ""}">{cell(row.get(k))}</td>' for k in keys)
+                   + "</tr>" for row in rows[:300])
     st.markdown(f'<div class="dss-scroll"><table class="dss-table"><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table></div>', unsafe_allow_html=True)
     if len(rows) > 300:
         st.caption(f"Showing 300 of {len(rows)} rows; the run download contains every record.")
@@ -181,13 +183,17 @@ def show_result(result):
             [f"{count} {name.replace('_', ' ')}" for name, count in counts.items()] +
             [f"{report['details']['deferred_count']} deferred"])) + '</div>', unsafe_allow_html=True)
         columns = st.columns(3)
-        columns[0].metric(f"Economic objective ({result['scenario']['currency']})", f"{report['economic_objective']:,.2f}")
-        columns[1].metric("Assessed avoided emissions (kg CO2e)", f"{report['avoided_co2_kg']:,.2f}")
-        columns[2].metric("Deferred packs", str(report["details"]["deferred_count"]))
+        with columns[0], st.container(key="result_economic"):
+            st.metric(f"Economic objective ({result['scenario']['currency']})", f"{report['economic_objective']:,.2f}")
+        with columns[1], st.container(key="result_emissions"):
+            st.metric("Assessed avoided emissions (kg CO2e)", f"{report['avoided_co2_kg']:,.2f}")
+        deferred = report["details"]["deferred_count"]
+        with columns[2], st.container(key="result_deferred_attention" if deferred else "result_deferred"):
+            st.metric("Deferred packs", str(deferred))
         st.caption("Optimal allocation; independently checked for feasibility. See Model & assumptions for engine details.")
         allocation_chart(result)
     elif result["solver"]:
-        st.error(f"No certified feasible allocation. Solver status: {result['status']}")
+        st.warning(f"**No certified feasible allocation.** Solver status: {result['status']}")
     else:
         st.success("Assessment complete. Review the battery–destination evidence below.")
         for column, status in zip(st.columns(3), ("eligible", "ineligible", "undetermined")):
@@ -204,13 +210,13 @@ def show_result(result):
               ["Admissibility", "Destination comparison", "Allocation details", "Traceability"])
     tabs = dict(zip(labels, st.tabs(labels)))
     with tabs["Admissibility"]:
-        table(filtered(result["eligibility"]))
+        table(filtered(result["eligibility"]), attention=lambda row: row["status"] == "undetermined")
         evidence = {"schema_version": 1, "scenario_fingerprint": result["scenario_fingerprint"], "records": result["eligibility"]}
         st.download_button("Download eligibility evidence", json.dumps(evidence, indent=2), "eligibility.json", "application/json")
     with tabs["Destination comparison"]:
         st.caption("Preference among currently eligible destinations. Ties are retained; shared constraints and deferral enter the allocation model.")
         st.caption(f"Economic values: {result['scenario']['currency']} per pair assessment; avoided emissions: kg CO2e.")
-        table(filtered(result["comparisons"]))
+        table(filtered(result["comparisons"]), attention=lambda row: row["eligibility"] == "undetermined")
     with tabs["Allocation details"]:
         if result["allocation"]:
             table([{"destination": d["pathway_id"], "assigned_packs": report["details"]["pathway_counts"][d["pathway_id"]],
@@ -442,9 +448,10 @@ def compare_view(history):
         a, b = st.columns(2)
         a.metric(f"Economic value ({second['scenario']['currency']})", f"{second['evaluation']['economic_objective']:,.2f}", delta=f"{diffs['economic_objective']:+,.2f}", delta_color="off")
         b.metric("Avoided emissions (kg CO2e)", f"{second['evaluation']['avoided_co2_kg']:,.2f}", delta=f"{diffs['avoided_co2_kg']:+,.2f}", delta_color="off")
-        table([{"metric": name, "baseline": first["evaluation"][name], "alternative": second["evaluation"][name], "difference": value} for name, value in diffs.items()])
+        with st.container(key="comparison_differences"):
+            table([{"metric": name, "baseline": first["evaluation"][name], "alternative": second["evaluation"][name], "difference": value} for name, value in diffs.items()])
     else:
-        st.warning("Numeric outcome comparison requires two evaluated allocations with matching currency and planning horizon.")
+        st.warning("**Numeric outcome comparison requires** two evaluated allocations with matching currency and planning horizon.")
     st.subheader("What changed")
     changed = comparison["changed_scenario_fields"]
     with st.expander("Scenario input differences"):
@@ -453,7 +460,7 @@ def compare_view(history):
     if first.get("allocation") and second.get("allocation"):
         a, b = first["allocation"]["assignments"], second["allocation"]["assignments"]
         if set(a) != set(b):
-            st.warning("The battery populations differ. Review additions and removals before interpreting aggregate changes.")
+            st.warning("**The battery populations differ.** Review additions and removals before interpreting aggregate changes.")
         st.subheader("Changed battery assignments")
         table([{"battery": key, "baseline": a.get(key) if key in a else "Not in scenario", "alternative": b.get(key) if key in b else "Not in scenario"} for key in sorted(set(a) | set(b)) if key not in a or key not in b or a[key] != b[key]])
         st.caption("A blank destination means deferred.")
@@ -474,7 +481,7 @@ def results_page(scenario):
                 selected = st.selectbox("Analysis run", list(lookup), format_func=lambda key: f"{lookup[key]['scenario']['scenario_id']} · {mode_label(lookup[key]['mode'])} · {key[:8]}", key="selected_run", persist_state="session")
                 result = lookup[selected]
                 if not current_basis(result, scenario):
-                    st.warning("Inputs have changed or model code was updated. This is a historical snapshot, not a recommendation for the active scenario.")
+                    st.warning("Inputs have changed or model code was updated. **This is a historical snapshot**, not a recommendation for the active scenario.")
             show_result(result)
         with compare_tab:
             compare_view(history)
