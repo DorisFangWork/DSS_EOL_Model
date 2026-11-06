@@ -517,3 +517,27 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 [data-testid="stMain"] .st-key-page_results_comparison [data-testid="stMetricDelta"] { font-weight:650; }
 [data-testid="stMain"] .st-key-page_results_comparison button [data-testid="stMarkdownContainer"],
 [data-testid="stMain"] .st-key-page_results_comparison button p { white-space:normal; overflow:visible; text-overflow:clip; }
+
+/* Configuration: short sections, a visible draft state and clear form groups. */
+[data-testid="stMain"] .st-key-config_status {
+  border:1px solid #bcc9c1; border-radius:10px; padding:1rem 1.2rem; background:#fff;
+}
+[data-testid="stMain"] .st-key-config_status:has(.draft) { border-left:4px solid #a87018; background:#fbf3e6; }
+[data-testid="stMain"] .st-key-config_status:has(.applied) { border-left:4px solid #344e41; }
+.config-status strong { display:block; font-size:1.15rem; line-height:1.4; color:#234b39; }
+.config-status.draft strong { color:#85540c; }
+.config-status span { display:block; margin-top:.3rem; font-size:.95rem; line-height:1.5; color:#52604f; }
+[data-testid="stMain"] .st-key-config_section > [role="tablist"] { gap:1.5rem; }
+[data-testid="stMain"] .st-key-config_destinations [role="tablist"] { gap:1rem; margin-bottom:1rem; }
+[data-testid="stMain"] .st-key-config_destinations [role="tab"] { font-weight:600; }
+[data-testid="stMain"] .st-key-page_configuration [data-testid="stCheckbox"] { margin-top:.35rem; }
+[data-testid="stMain"] .st-key-page_configuration [data-testid="stWidgetLabel"] p { font-weight:600; line-height:1.45; }
+[data-testid="stMain"] .st-key-page_configuration input:disabled { color:#65746b; -webkit-text-fill-color:#65746b; }
+[data-testid="stMain"] .st-key-page_configuration [data-testid="stNumberInput"]:has(input:disabled) [data-testid="stWidgetLabel"] p { color:#65746b; }
+[data-testid="stMain"] .st-key-page_configuration [data-testid="stCaptionContainer"] p { font-size:.95rem; letter-spacing:0; font-weight:400; }
+[data-testid="stMain"] .st-key-page_configuration button [data-testid="stMarkdownContainer"],
+[data-testid="stMain"] .st-key-page_configuration button p { white-space:normal; overflow:visible; text-overflow:clip; }
+@media(max-width:700px) {
+  [data-testid="stMain"] .st-key-config_section > [role="tablist"] { gap:.8rem; }
+  [data-testid="stMain"] .st-key-config_status { padding:1rem; }
+}

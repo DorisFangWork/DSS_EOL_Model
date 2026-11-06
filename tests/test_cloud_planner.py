@@ -165,6 +165,12 @@ def test_configuration_apply_history_comparison_and_stale_evidence():
     capacity.set_value(2.0).run()
     assert app.session_state["scenario"].destinations[0].capacity == 1
     assert any("Unapplied changes" in w.value for w in app.caption)
+    app.session_state["config_section"] = "Shared limits"
+    app.run()
+    assert next(n for n in app.number_input if n.key == capacity.key).value == 2.0
+    app.button(key="workflow_config_review").click().run()
+    assert app.session_state["config_section"] == "Review & apply"
+    assert app.session_state["runs"][0] == first
     app.button(key="apply").click().run()
     assert app.session_state["scenario"].destinations[0].capacity == 2
     app.button(key="nav_" + "Results & comparison").click().run()

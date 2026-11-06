@@ -7,7 +7,7 @@ The product proposition is: turn battery information and operational constraints
 - Dashboard is the default entry page, showing portfolio metrics, decision tools, the active scenario, latest analysis, recent activity and an expandable battery inventory.
 - About the DSS contains the product introduction and pilot guidance as secondary information.
 - Decision workspace supports independent eligibility assessment, destination comparison, allocation planning and an integrated analysis.
-- Configuration applies shared operational inputs; previous results retain their input snapshots.
+- Configuration groups shared inputs into Scenario, Destinations, Shared limits, and Review & apply. Destination tabs keep each destination's rules together. A draft-status panel opens the change review; switching sections retains edits, while leaving Configuration discards unapplied edits. Previous results retain their input snapshots.
 - Results & comparison explains recommendations and exports complete run and comparison records.
 - Model & assumptions explains scope, source-example notes, assessment values and provenance.
 

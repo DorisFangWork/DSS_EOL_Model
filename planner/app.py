@@ -58,6 +58,10 @@ def reset_configuration():
     st.session_state["config_generation"] = st.session_state.get("config_generation", 0) + 1
 
 
+def review_configuration():
+    st.session_state["config_section"] = "Review & apply"
+
+
 def configuration_changes(before, after, path=""):
     """Summarise settings and keep imported record collections compact."""
     if before == after:
@@ -70,16 +74,26 @@ def configuration_changes(before, after, path=""):
         if path in ("destinations", "resources") and len(before) == len(after):
             return [row for old, new in zip(before, after)
                     for row in configuration_changes(old, new, new.get("name", path))]
-        before, after = f"{len(before)} records", f"{len(after)} records (updated)"
-    return [{"Setting": path.replace("_", " "), "Applied": before, "Draft": after}]
+        if path in ("batteries", "values", "destinations", "resources"):
+            before, after = f"{len(before)} records", f"{len(after)} records (updated)"
+    labels = {"scenario_id": "Scenario name", "version": "Scenario version", "decision_maker": "Decision maker",
+              "min_soh": "Minimum SOH", "max_safety_class": "Maximum safety class",
+              "allowed_chemistries": "Allowed chemistries", "capacity": "Capacity", "demand_limits": "Compatible demand (packs)",
+              "co2_floor_kg": "Avoided emissions floor (kg CO2e)", "batteries": "Battery records", "values": "Value assessments"}
+    return [{"Setting": " / ".join(labels.get(part, part.replace("_", " ")) for part in path.split(" / ")),
+             "Applied": before, "Draft": after}]
 
 
 def configure(scenario):
     generation = st.session_state.get("config_generation", 0)
     st.subheader("Set the rules and limits for this scenario")
-    st.caption("Edit a draft, then apply it to the shared scenario. Leaving this page discards unapplied edits.")
-    with st.container(border=True, key="configuration_scenario"):
-        st.subheader("Scenario")
+    st.caption("Switching sections keeps your draft. Review and apply your changes before leaving Configuration; leaving this page discards unapplied edits.")
+    status = st.container(key="config_status")
+    scenario_tab, destinations_tab, resources_tab, review_tab = st.tabs(
+        ["Scenario", "Destinations", "Shared limits", "Review & apply"], key="config_section", on_change="rerun")
+    with scenario_tab, st.container(border=True, key="configuration_scenario"):
+        st.subheader("Scenario details")
+        st.caption("Identify the planning case and decision owner. Applied inputs are shared by all three capabilities.")
         uploaded = None if SYNTHETIC_CLOUD else st.file_uploader("Load a complete scenario JSON", type="json", key=f"config_upload_{generation}")
         base = (scenario_from_json(uploaded.getvalue().decode("utf-8-sig")) if uploaded else
                 scenario)
@@ -111,15 +125,18 @@ def configure(scenario):
                         st.caption("Admission can use partial records. Comparison/allocation need explicit assessments; use a complete scenario JSON or opt into the illustrative formulas.")
     destinations = []
     demand = {}
-    st.subheader("Destinations")
-    with st.container():
-        for d in base.destinations:
-            with st.container(border=True, key=f"configuration_destination_{d.pathway_id}"):
+    with destinations_tab:
+        st.caption("Choose a destination to edit its entry requirements and allocation limits.")
+        destination_panels = st.tabs([d.name for d in base.destinations], key="config_destinations")
+        for d, destination_panel in zip(base.destinations, destination_panels):
+            with destination_panel, st.container(border=True, key=f"configuration_destination_{d.pathway_id}"):
                 key = f"{base_key}_{d.pathway_id}"
                 st.subheader(d.name)
                 entry, limits = st.columns(2)
-                entry.caption("ENTRY REQUIREMENTS")
-                limits.caption("CAPACITY & DEMAND")
+                entry.markdown("**Entry requirements**")
+                entry.caption("Enable a rule to set its value. SOH uses a 0–1 scale: 0.70 means 70%.")
+                limits.markdown("**Capacity & demand**")
+                limits.caption("Capacity uses assessment units; compatible demand counts battery packs.")
                 has_soh = entry.checkbox("Minimum SOH applies", d.min_soh is not None, key=f"soh_on_{key}")
                 soh = entry.number_input("Minimum SOH (0–1)", help="0.70 means 70% state of health.", min_value=0.0, max_value=1.0, value=d.min_soh or 0.0, step=0.01, key=f"soh_{key}", disabled=not has_soh)
                 has_safety = entry.checkbox("Safety-class ceiling applies", d.max_safety_class is not None, key=f"safe_on_{key}")
@@ -135,19 +152,24 @@ def configure(scenario):
                                             allowed_chemistries=tuple(c.strip() for c in chem.split(",") if c.strip()) or None,
                                             capacity=capacity if bounded else None))
     resources = []
-    st.subheader("Shared constraints")
-    with st.container(border=True, key="configuration_resources"):
+    with resources_tab, st.container(border=True, key="configuration_resources"):
+        st.subheader("Shared resource limits")
+        st.caption("Allocation planning shares these resources across destinations. Each resource keeps the unit shown below.")
         for resource in base.resources:
             capacity = st.number_input(f"{resource.name} ({resource.unit})", min_value=0.0,
                                        value=float(resource.capacity), key=f"res_{base_key}_{resource.resource_id}")
             resources.append(replace(resource, capacity=capacity))
+        st.divider()
+        st.markdown("**Environmental requirement**")
+        st.caption("An optional lower bound on assessed avoided emissions. Allocation continues to maximise economic value.")
         floor_on = st.checkbox("Require minimum avoided emissions", base.co2_floor_kg is not None, key=f"floor_on_{base_key}")
         floor = st.number_input("Avoided emissions floor (kg CO2e)", min_value=0.0, value=float(base.co2_floor_kg or 0), key=f"floor_{base_key}", disabled=not floor_on)
     candidate = replace(base, scenario_id=sid, version=int(revision), decision_maker=actor,
                        destinations=tuple(destinations), resources=tuple(resources), demand_limits=demand,
                        co2_floor_kg=floor if floor_on else None)
-    st.subheader("Review & apply")
-    with st.container(border=True, key="configuration_review"):
+    with review_tab, st.container(border=True, key="configuration_review"):
+        st.subheader("Review & apply")
+        st.caption("Compare your draft with the currently applied settings. Existing analysis snapshots retain their original inputs.")
         changes = configuration_changes(plain(scenario), plain(candidate))
         if changes:
             with st.container(key="draft_notice"):
@@ -163,8 +185,20 @@ def configure(scenario):
             st.session_state["notice"] = "Configuration applied. Run a capability to assess this scenario."
             st.rerun()
         discard.button("Discard changes", on_click=reset_configuration, disabled=not changes)
-    with st.expander("Battery inventory"):
+        st.button("Open decision workspace", key="workflow_config_workspace", on_click=go, args=("Decision workspace",),
+                  disabled=bool(changes), help="Apply or discard pending changes before continuing.")
+    with scenario_tab, st.expander("Battery inventory"):
+        st.caption("These records belong to the current draft scenario.")
         table(plain(candidate.batteries))
+    with status:
+        summary, action = st.columns([4, 1.4], vertical_alignment="center")
+        state = "draft" if changes else "applied"
+        headline = f"{len(changes)} changed setting{'s' if len(changes) != 1 else ''} to review" if changes else "All settings applied"
+        summary.markdown(f'<div class="config-status {state}"><strong>{headline}</strong><span>'
+                         f'{len(candidate.batteries)} battery packs · {len(candidate.destinations)} destinations · '
+                         f'{len(candidate.resources)} shared resources</span></div>', unsafe_allow_html=True)
+        action.button("Review changes", key="workflow_config_review", on_click=review_configuration,
+                      disabled=not changes, width="stretch")
 
 
 def show_result(result):
