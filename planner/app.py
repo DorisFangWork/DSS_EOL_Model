@@ -265,17 +265,51 @@ def show_result(result):
         else:
             st.info("This run has no allocation result.")
     with tabs["Traceability"]:
-        st.write(result["scenario"]["source"])
-        for assumption in result["scenario"]["assumptions"]:
-            st.write("• " + assumption)
-        st.json({"scenario_fingerprint": result["scenario_fingerprint"], "implementation": result["implementation"],
-                 "eligibility_origin": result["eligibility_origin"], "unknown_policy": result["unknown_policy"], "solver": result["solver"]})
+        show_traceability(result, tone)
     if not SYNTHETIC_CLOUD and st.button("Save run to local history", key="save"):
         try:
             RunStore(STORE_PATH).save(result)
             st.success("Saved with its full input snapshot and provenance.")
         except sqlite3.IntegrityError:
             st.info("This run is already saved.")
+
+
+def show_traceability(result, tone):
+    snapshot = result["scenario"]
+    with st.container(border=True, key="trace_snapshot"):
+        st.subheader("Run snapshot")
+        st.markdown(
+            '<dl class="trace-facts">'
+            f'<div><dt>Scenario</dt><dd>{html.escape(snapshot["scenario_id"])}'
+            f' · version {snapshot["version"]}</dd></div>'
+            f'<div><dt>Analysis</dt><dd>{html.escape(mode_label(result["mode"]))}</dd></div>'
+            f'<div><dt>Run status</dt><dd><span class="result-status state-{tone}">'
+            f'{html.escape(result["status"].title())}</span></dd></div></dl>',
+            unsafe_allow_html=True,
+        )
+        st.caption(f"Run {result['run_id'][:8]} · Inputs and checks recorded with this analysis.")
+        solver = result["solver"]
+        if solver is None:
+            st.caption("Allocation checks are not applicable to this analysis.")
+        else:
+            report = result["evaluation"]
+            verified = bool(result["allocation"] and report and report["feasible"])
+            certified = bool(solver.get("exact_certificate"))
+            table(
+                [{"Check": "Solver optimality certificate", "Outcome": "Present" if certified else "Not certified"},
+                 {"Check": "Independent feasibility", "Outcome": "Verified" if verified else "No verified allocation"}],
+                attention=lambda row: row["Outcome"] in {"Not certified", "No verified allocation"},
+            )
+    with st.container(border=True, key="trace_sources"):
+        st.subheader("Source and assumptions")
+        st.caption("These notes come from the scenario saved with this run.")
+        st.write(snapshot["source"])
+        for assumption in snapshot["assumptions"]:
+            st.write("• " + assumption)
+    with st.expander("Technical record (JSON)"):
+        st.json({"run_id": result["run_id"], "scenario_fingerprint": result["scenario_fingerprint"],
+                 "implementation": result["implementation"], "eligibility_origin": result["eligibility_origin"],
+                 "unknown_policy": result["unknown_policy"], "solver": solver})
 
 
 def go(page, mode=None):
@@ -541,10 +575,12 @@ def saved_history():
 
 def assumptions(scenario):
     with st.container(border=True, key="model_scope"):
-        st.subheader("Understand the model and its limits")
-        st.write("The DSS is an industry-oriented product prototype. Validated research can strengthen its modular capabilities.")
-        st.write("Allocation engine: Model 0 — deterministic, one-period economic optimisation, with admissibility, demand and shared-resource constraints.")
-        st.info("Results are planned initial disposition decisions. Delivered service, subsequent qualification, material recovery and credited supply are outside this model's current calculations.")
+        st.subheader("Model scope")
+        st.markdown('<p class="reading-lead">Model 0 plans the initial disposition of a fleet over one period. '
+                    'With fixed inputs, it maximises assessed economic value after deferral costs, '
+                    'subject to eligibility, capacity, demand, shared resources and any configured emissions floor.</p>',
+                    unsafe_allow_html=True)
+        st.write("**Scope boundary.** Delivered service, subsequent qualification, material recovery and credited supply fall outside these calculations.")
     with st.container(border=True, key="model_sources"):
         st.subheader("Source scenario notes")
         st.caption("These notes describe the original example. Applied configuration and saved run snapshots define the current planning case.")

@@ -345,7 +345,7 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 [data-testid="stMain"] [class*="st-key-model_"] {
   border:1px solid var(--dss-card-border) !important; border-radius:10px; background:#fff;
 }
-[data-testid="stMain"] :is(.st-key-model_scope, section.about-intro) { background:#f5f7f5; }
+[data-testid="stMain"] section.about-intro { background:#f5f7f5; }
 [class*="st-key-configuration_destination_"] [data-testid="stCaptionContainer"] p {
   font-size:.8rem; font-weight:600; letter-spacing:.06em;
 }
@@ -541,3 +541,24 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
   [data-testid="stMain"] .st-key-config_section > [role="tablist"] { gap:.8rem; }
   [data-testid="stMain"] .st-key-config_status { padding:1rem; }
 }
+
+/* Reading panels put scope and recorded checks ahead of supporting detail. */
+[data-testid="stMain"] :is(.st-key-model_scope, .st-key-trace_snapshot) {
+  background:#fffdf8; border-color:#ddd6c8 !important; border-left:4px solid #0e5a4a !important;
+}
+[data-testid="stMain"] :is(.st-key-trace_snapshot, .st-key-trace_sources) {
+  padding:clamp(1rem, 2vw, 1.4rem) !important; border-radius:10px;
+}
+[data-testid="stMain"] .st-key-model_scope .reading-lead {
+  max-width:45rem; font-size:1.15rem; line-height:1.55; color:#1c2220;
+}
+[data-testid="stMain"] :is(.st-key-model_scope, .st-key-model_sources, .st-key-trace_sources) [data-testid="stMarkdownContainer"] p {
+  max-width:45rem;
+}
+.trace-facts {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap:.85rem 1.25rem; margin:0;
+}
+.trace-facts dt { color:#52604f; font-size:.9rem; margin-bottom:.2rem; }
+.trace-facts dd { margin:0; color:#1c2220; font-weight:600; overflow-wrap:anywhere; }
+[data-testid="stMain"] .st-key-trace_snapshot .dss-table { min-width:0; }
