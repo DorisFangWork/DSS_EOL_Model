@@ -87,7 +87,7 @@ def configuration_changes(before, after, path=""):
 def configure(scenario):
     generation = st.session_state.get("config_generation", 0)
     st.subheader("Set the rules and limits for this scenario")
-    st.caption("Switching sections keeps your draft. Review and apply your changes before leaving Configuration; leaving this page discards unapplied edits.")
+    st.caption("Your draft stays while you switch sections. Leaving Configuration discards unapplied edits.")
     status = st.container(key="config_status")
     scenario_tab, destinations_tab, resources_tab, review_tab = st.tabs(
         ["Scenario", "Destinations", "Shared limits", "Review & apply"], key="config_section", on_change="rerun")
@@ -368,8 +368,8 @@ def capability_cards(compact=False):
 
 def overview(scenario):
     st.markdown('<section class="about-intro"><div class="eyebrow">EV BATTERY DISPOSITION · DECISION SUPPORT</div>'
-                '<h2>One planning context. Three connected capabilities.</h2>'
-                '<p>Turn battery information and operational constraints into traceable disposition plans.</p>'
+                '<h2>Plan and explain battery disposition</h2>'
+                '<p class="reading-lead">Assess entry requirements, compare destinations and plan fleet allocation using one shared scenario.</p>'
                 '<div class="product-paths"><span>BATTERY INFORMATION</span><b>↔</b><span>DECISION CAPABILITIES</span><b>↔</b><span>PLANNING CONTEXT</span></div></section>', unsafe_allow_html=True)
     left, right = st.columns([1, 1])
     left.button("Open planning dashboard", on_click=go, args=("Dashboard",), width="stretch")
@@ -403,8 +403,10 @@ def mode_label(mode):
 
 
 def workspace(scenario):
-    st.subheader("What decision do you need to make?")
-    st.caption("Choose a question. These capabilities share the same scenario and can be used independently.")
+    with st.container(border=True, key="workspace_scope"):
+        st.subheader("What decision do you need to make?")
+        st.markdown('<p class="reading-lead">Pick a question. Each capability can run on its own using the applied scenario.</p>',
+                    unsafe_allow_html=True)
     selected = st.session_state.get("mode")
     choices = [
         ("Battery admissibility", "Can this battery enter a destination?", "Check eligibility", "✓"),
@@ -510,7 +512,7 @@ def compare_view(history):
         st.info("Select two different runs to compare.")
         return
     comparison = compare_runs(first, second)
-    st.caption("Alternative minus baseline. These are scenario differences, not demonstrated coordination gains or causal effects.")
+    st.caption("Each difference is the alternative minus the baseline. Causal effects and coordination gains require separate evidence.")
     diffs = comparison["differences"]
     if diffs:
         a, b = st.columns(2)
@@ -522,6 +524,7 @@ def compare_view(history):
         st.warning("**Numeric outcome comparison requires** two evaluated allocations with matching currency and planning horizon.")
     st.subheader("What changed")
     changed = comparison["changed_scenario_fields"]
+    st.caption(f"Scenario fields changed: {len(changed)} · Run details changed: {len(comparison['changed_run_fields'])}")
     with st.expander("Scenario input differences"):
         table([{"scenario_field": key, "baseline": json.dumps(first["scenario"].get(key), ensure_ascii=False), "alternative": json.dumps(second["scenario"].get(key), ensure_ascii=False)} for key in changed])
         st.caption("Changed analysis settings: " + (", ".join(comparison["changed_run_fields"]) or "None"))
@@ -537,7 +540,10 @@ def compare_view(history):
 
 def results_page(scenario):
     history = st.session_state["runs"]
-    st.caption("Completed analyses retain their input snapshots. Cloud history lasts for this session; download results to keep them.")
+    st.markdown('<p class="reading-lead">Review a completed run or compare a baseline with an alternative.</p>',
+                unsafe_allow_html=True)
+    st.caption("Each run retains its input snapshot. Download results to keep them beyond this session." if SYNTHETIC_CLOUD
+               else "Each run retains its input snapshot for review and comparison.")
     if not history:
         st.info("No analyses yet. Open the Decision workspace to run a capability.")
         st.button("Open decision workspace", key="workflow_workspace", on_click=go, args=("Decision workspace",))

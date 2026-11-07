@@ -253,6 +253,9 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 [data-testid="stMain"] {
   --dss-card-border:#bcc9c1;
   --dss-card-shadow:0 2px 6px rgb(34 59 48 / 5%);
+  --dss-reading-paper:#fffdf8;
+  --dss-reading-line:#ddd6c8;
+  --dss-reading-accent:#0e5a4a;
 }
 [data-testid="stMain"] :is(
   .st-key-central_planning, .st-key-central_technical, .st-key-central_management, .st-key-central_review,
@@ -396,7 +399,8 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
   font-size:.95rem !important; font-weight:600; color:var(--dss-secondary);
 }
 [data-testid="stMain"] :is(.st-key-dashboard_context,.st-key-results_context,.st-key-comparison_context) {
-  background:#fff !important; border-left:3px solid #588157 !important; padding:1rem 1.2rem !important;
+  background:var(--dss-reading-paper) !important; border-color:var(--dss-reading-line) !important;
+  border-left:4px solid var(--dss-reading-accent) !important; padding:1rem 1.2rem !important;
 }
 [data-testid="stMain"] .context-strip { gap:.6rem 1.5rem; font-size:1rem; }
 [data-testid="stMain"] .context-strip strong { font-size:1.35rem; font-weight:700; }
@@ -424,7 +428,10 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 [data-testid="stMain"] .st-key-page_overview [class*="st-key-capability_"] > [data-testid="stElementContainer"]:last-child { margin-top:auto; }
 [data-testid="stMain"] .capability-copy h3 { font-size:1.35rem !important; font-weight:650; }
 [data-testid="stMain"] .eyebrow { font-size:.9rem; font-weight:600; letter-spacing:.025em; }
-[data-testid="stMain"] section.about-intro { background:#fff; padding:1.6rem; border-left:3px solid #588157 !important; }
+[data-testid="stMain"] section.about-intro {
+  background:var(--dss-reading-paper); padding:1.6rem;
+  border-color:var(--dss-reading-line) !important; border-left:4px solid var(--dss-reading-accent) !important;
+}
 [data-testid="stMain"] .about-intro h2 { font-size:1.65rem !important; margin:.65rem 0; }
 [data-testid="stMain"] .about-intro p { font-size:1.05rem; color:var(--dss-body); }
 [data-testid="stMain"] .run-meta { font-size:.95rem; }
@@ -520,15 +527,19 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 
 /* Configuration: short sections, a visible draft state and clear form groups. */
 [data-testid="stMain"] .st-key-config_status {
-  border:1px solid #bcc9c1; border-radius:10px; padding:1rem 1.2rem; background:#fff;
+  border:1px solid var(--dss-reading-line); border-radius:10px; padding:1rem 1.2rem; background:var(--dss-reading-paper);
 }
 [data-testid="stMain"] .st-key-config_status:has(.draft) { border-left:4px solid #a87018; background:#fbf3e6; }
-[data-testid="stMain"] .st-key-config_status:has(.applied) { border-left:4px solid #344e41; }
+[data-testid="stMain"] .st-key-config_status:has(.applied) { border-left:4px solid var(--dss-reading-accent); }
 .config-status strong { display:block; font-size:1.15rem; line-height:1.4; color:#234b39; }
 .config-status.draft strong { color:#85540c; }
 .config-status span { display:block; margin-top:.3rem; font-size:.95rem; line-height:1.5; color:#52604f; }
-[data-testid="stMain"] .st-key-config_section > [role="tablist"] { gap:1.5rem; }
-[data-testid="stMain"] .st-key-config_destinations [role="tablist"] { gap:1rem; margin-bottom:1rem; }
+[data-testid="stMain"] [data-testid="stTabs"] [role="tablist"] { gap:.4rem; }
+[data-testid="stMain"] [data-testid="stTabs"] [role="tab"] { padding-inline:.65rem; }
+[data-testid="stMain"] [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+  background:#e3efe9; border-radius:6px 6px 0 0;
+}
+[data-testid="stMain"] .st-key-config_destinations [role="tablist"] { margin-bottom:1rem; }
 [data-testid="stMain"] .st-key-config_destinations [role="tab"] { font-weight:600; }
 [data-testid="stMain"] .st-key-page_configuration [data-testid="stCheckbox"] { margin-top:.35rem; }
 [data-testid="stMain"] .st-key-page_configuration [data-testid="stWidgetLabel"] p { font-weight:600; line-height:1.45; }
@@ -538,19 +549,24 @@ button:focus-visible, a:focus-visible { outline:3px solid #588157 !important; ou
 [data-testid="stMain"] .st-key-page_configuration button [data-testid="stMarkdownContainer"],
 [data-testid="stMain"] .st-key-page_configuration button p { white-space:normal; overflow:visible; text-overflow:clip; }
 @media(max-width:700px) {
-  [data-testid="stMain"] .st-key-config_section > [role="tablist"] { gap:.8rem; }
+  [data-testid="stMain"] [data-testid="stTabs"] [role="tab"] { padding-inline:.4rem; }
   [data-testid="stMain"] .st-key-config_status { padding:1rem; }
 }
 
-/* Reading panels put scope and recorded checks ahead of supporting detail. */
-[data-testid="stMain"] :is(.st-key-model_scope, .st-key-trace_snapshot) {
-  background:#fffdf8; border-color:#ddd6c8 !important; border-left:4px solid #0e5a4a !important;
+/* Reading panels put the task or recorded checks ahead of supporting detail. */
+[data-testid="stMain"] :is(.st-key-model_scope, .st-key-trace_snapshot, .st-key-workspace_scope) {
+  background:var(--dss-reading-paper); border-color:var(--dss-reading-line) !important;
+  border-left:4px solid var(--dss-reading-accent) !important; border-radius:10px;
 }
+[data-testid="stMain"] .st-key-workspace_scope { padding:.9rem 1.2rem !important; gap:.55rem !important; }
 [data-testid="stMain"] :is(.st-key-trace_snapshot, .st-key-trace_sources) {
   padding:clamp(1rem, 2vw, 1.4rem) !important; border-radius:10px;
 }
-[data-testid="stMain"] .st-key-model_scope .reading-lead {
+[data-testid="stMain"] [data-testid="stMarkdownContainer"] .reading-lead {
   max-width:45rem; font-size:1.15rem; line-height:1.55; color:#1c2220;
+}
+[data-testid="stMain"] [data-testid="stExpander"] details[open] > summary {
+  border-bottom:1px solid var(--dss-reading-line);
 }
 [data-testid="stMain"] :is(.st-key-model_scope, .st-key-model_sources, .st-key-trace_sources) [data-testid="stMarkdownContainer"] p {
   max-width:45rem;
